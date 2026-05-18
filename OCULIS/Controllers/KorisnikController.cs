@@ -2,39 +2,38 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using OCULIS.Data;
 using OCULIS.Models;
 
 namespace OCULIS.Controllers
 {
     public class KorisnikController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly UserManager<Korisnik> _userManager;
 
-        public KorisnikController(ApplicationDbContext context)
+        public KorisnikController(UserManager<Korisnik> userManager)
         {
-            _context = context;
+            _userManager = userManager;
         }
 
         // GET: Korisnik
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Korisnik.ToListAsync());
+            return View(await _userManager.Users.ToListAsync());
         }
 
         // GET: Korisnik/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(string id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var korisnik = await _context.Korisnik
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var korisnik = await _userManager.FindByIdAsync(id);
+
             if (korisnik == null)
             {
                 return NotFound();
@@ -50,43 +49,50 @@ namespace OCULIS.Controllers
         }
 
         // POST: Korisnik/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Ime,Prezime,Email,Lozinka,Telefon")] Korisnik korisnik)
+        public async Task<IActionResult> Create(Korisnik korisnik, string password)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(korisnik);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                var result = await _userManager.CreateAsync(korisnik, password);
+
+                if (result.Succeeded)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
             }
+
             return View(korisnik);
         }
 
         // GET: Korisnik/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(string id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var korisnik = await _context.Korisnik.FindAsync(id);
+            var korisnik = await _userManager.FindByIdAsync(id);
+
             if (korisnik == null)
             {
                 return NotFound();
             }
+
             return View(korisnik);
         }
 
         // POST: Korisnik/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Ime,Prezime,Email,Lozinka,Telefon")] Korisnik korisnik)
+        public async Task<IActionResult> Edit(string id, Korisnik korisnik)
         {
             if (id != korisnik.Id)
             {
@@ -95,37 +101,45 @@ namespace OCULIS.Controllers
 
             if (ModelState.IsValid)
             {
-                try
+                var existingUser = await _userManager.FindByIdAsync(id);
+
+                if (existingUser == null)
                 {
-                    _context.Update(korisnik);
-                    await _context.SaveChangesAsync();
+                    return NotFound();
                 }
-                catch (DbUpdateConcurrencyException)
+
+                existingUser.Ime = korisnik.Ime;
+                existingUser.Prezime = korisnik.Prezime;
+                existingUser.Email = korisnik.Email;
+                existingUser.UserName = korisnik.Email;
+                existingUser.PhoneNumber = korisnik.PhoneNumber;
+
+                var result = await _userManager.UpdateAsync(existingUser);
+
+                if (result.Succeeded)
                 {
-                    if (!KorisnikExists(korisnik.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    return RedirectToAction(nameof(Index));
                 }
-                return RedirectToAction(nameof(Index));
+
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
             }
+
             return View(korisnik);
         }
 
         // GET: Korisnik/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(string id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var korisnik = await _context.Korisnik
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var korisnik = await _userManager.FindByIdAsync(id);
+
             if (korisnik == null)
             {
                 return NotFound();
@@ -137,21 +151,21 @@ namespace OCULIS.Controllers
         // POST: Korisnik/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(string id)
         {
-            var korisnik = await _context.Korisnik.FindAsync(id);
+            var korisnik = await _userManager.FindByIdAsync(id);
+
             if (korisnik != null)
             {
-                _context.Korisnik.Remove(korisnik);
+                await _userManager.DeleteAsync(korisnik);
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool KorisnikExists(int id)
+        private bool KorisnikExists(string id)
         {
-            return _context.Korisnik.Any(e => e.Id == id);
+            return _userManager.Users.Any(e => e.Id == id);
         }
     }
 }

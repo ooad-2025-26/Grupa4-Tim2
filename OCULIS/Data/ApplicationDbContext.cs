@@ -1,17 +1,17 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using OCULIS.Models;
+using System.Collections;
 
 namespace OCULIS.Data
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext : IdentityDbContext<Korisnik>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
         }
 
-        public DbSet<Korisnik> Korisnik { get; set; }
         public DbSet<Proizvod> Proizvod { get; set; }
         public DbSet<Korpa> Korpa { get; set; }
         public DbSet<StavkaKorpe> StavkaKorpe { get; set; }
@@ -22,10 +22,10 @@ namespace OCULIS.Data
         public DbSet<TerminPregleda> TerminPregleda { get; set; }
         public DbSet<ElektronskiKarton> ElektronskiKarton { get; set; }
         public DbSet<PregledVida> PregledVida { get; set; }
+        public IEnumerable Korisnik { get; internal set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Korisnik>().ToTable("Korisnik");
             modelBuilder.Entity<Proizvod>().ToTable("Proizvod");
             modelBuilder.Entity<Korpa>().ToTable("Korpa");
             modelBuilder.Entity<StavkaKorpe>().ToTable("StavkaKorpe");

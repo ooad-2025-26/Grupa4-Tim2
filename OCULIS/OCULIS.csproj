@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-OCULIS-cc902a4b-aa2e-4899-b42a-330daefd2d1b</UserSecretsId>
+	  <NoWarn>NU1901</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -13,7 +13,7 @@ namespace OCULIS.Models
         public string Napomena { get; set; }
 
         [ForeignKey("Korisnik")]
-        public int IdKorisnik { get; set; }
+        public string IdKorisnik { get; set; }
         public Korisnik Korisnik { get; set; }
     }
 }
