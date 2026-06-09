@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using OCULIS.Constants;
 using OCULIS.Data;
 using OCULIS.Models;
 
@@ -13,145 +10,95 @@ namespace OCULIS.Controllers
     public class PoslovnicaController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public PoslovnicaController(ApplicationDbContext context)
+        public PoslovnicaController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
-        // GET: Poslovnica
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
+            ViewBag.GoogleMapsApiKey = _configuration["GoogleMaps:ApiKey"] ?? "";
             return View(await _context.Poslovnica.ToListAsync());
         }
 
-        // GET: Poslovnica/Details/5
+        [AllowAnonymous]
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var poslovnica = await _context.Poslovnica
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (poslovnica == null)
-            {
-                return NotFound();
-            }
+            var poslovnica = await _context.Poslovnica.FirstOrDefaultAsync(m => m.Id == id);
+            if (poslovnica == null) return NotFound();
 
+            ViewBag.GoogleMapsApiKey = _configuration["GoogleMaps:ApiKey"] ?? "";
             return View(poslovnica);
         }
 
-        // GET: Poslovnica/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
+        [Authorize(Roles = Uloge.Administrator)]
+        public IActionResult Create() => View();
 
-        // POST: Poslovnica/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Naziv,Adresa,Telefon,RadnoVrijeme")] Poslovnica poslovnica)
+        [Authorize(Roles = Uloge.Administrator)]
+        public async Task<IActionResult> Create([Bind("Naziv,Adresa,Telefon,RadnoVrijeme,Latitude,Longitude")] Poslovnica poslovnica)
         {
             if (ModelState.IsValid)
             {
                 _context.Add(poslovnica);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "Poslovnica kreirana.";
                 return RedirectToAction(nameof(Index));
             }
             return View(poslovnica);
         }
 
-        // GET: Poslovnica/Edit/5
+        [Authorize(Roles = Uloge.Administrator)]
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
+            if (id == null) return NotFound();
             var poslovnica = await _context.Poslovnica.FindAsync(id);
-            if (poslovnica == null)
-            {
-                return NotFound();
-            }
+            if (poslovnica == null) return NotFound();
             return View(poslovnica);
         }
 
-        // POST: Poslovnica/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Naziv,Adresa,Telefon,RadnoVrijeme")] Poslovnica poslovnica)
+        [Authorize(Roles = Uloge.Administrator)]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Naziv,Adresa,Telefon,RadnoVrijeme,Latitude,Longitude")] Poslovnica poslovnica)
         {
-            if (id != poslovnica.Id)
-            {
-                return NotFound();
-            }
+            if (id != poslovnica.Id) return NotFound();
 
             if (ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(poslovnica);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!PoslovnicaExists(poslovnica.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                _context.Update(poslovnica);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Poslovnica ažurirana.";
                 return RedirectToAction(nameof(Index));
             }
             return View(poslovnica);
         }
 
-        // GET: Poslovnica/Delete/5
+        [Authorize(Roles = Uloge.Administrator)]
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var poslovnica = await _context.Poslovnica
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (poslovnica == null)
-            {
-                return NotFound();
-            }
-
+            if (id == null) return NotFound();
+            var poslovnica = await _context.Poslovnica.FirstOrDefaultAsync(m => m.Id == id);
+            if (poslovnica == null) return NotFound();
             return View(poslovnica);
         }
 
-        // POST: Poslovnica/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = Uloge.Administrator)]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var poslovnica = await _context.Poslovnica.FindAsync(id);
-            if (poslovnica != null)
-            {
-                _context.Poslovnica.Remove(poslovnica);
-            }
-
+            if (poslovnica != null) _context.Poslovnica.Remove(poslovnica);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool PoslovnicaExists(int id)
-        {
-            return _context.Poslovnica.Any(e => e.Id == id);
         }
     }
 }

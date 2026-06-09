@@ -1,12 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using OCULIS.Constants;
 using OCULIS.Data;
 using OCULIS.Models;
+using OCULIS.Models.ViewModels;
 
 namespace OCULIS.Controllers
 {
@@ -19,139 +17,118 @@ namespace OCULIS.Controllers
             _context = context;
         }
 
-        // GET: Proizvod
-        public async Task<IActionResult> Index()
+        [AllowAnonymous]
+        public async Task<IActionResult> Index(ProizvodPretragaViewModel filter)
         {
-            return View(await _context.Proizvod.ToListAsync());
+            var query = _context.Proizvod.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(filter.Pretraga))
+            {
+                var pretraga = filter.Pretraga.ToLower();
+                query = query.Where(p =>
+                    p.Naziv.ToLower().Contains(pretraga) ||
+                    p.Opis.ToLower().Contains(pretraga) ||
+                    p.Proizvodjac.ToLower().Contains(pretraga));
+            }
+
+            if (filter.Kategorija.HasValue)
+                query = query.Where(p => p.Kategorija == filter.Kategorija);
+
+            if (!string.IsNullOrWhiteSpace(filter.Proizvodjac))
+                query = query.Where(p => p.Proizvodjac.Contains(filter.Proizvodjac));
+
+            if (filter.MinCijena.HasValue)
+                query = query.Where(p => p.Cijena >= filter.MinCijena);
+
+            if (filter.MaxCijena.HasValue)
+                query = query.Where(p => p.Cijena <= filter.MaxCijena);
+
+            query = filter.Sortiranje switch
+            {
+                "cijena_asc" => query.OrderBy(p => p.Cijena),
+                "cijena_desc" => query.OrderByDescending(p => p.Cijena),
+                "naziv" => query.OrderBy(p => p.Naziv),
+                _ => query.OrderBy(p => p.Naziv)
+            };
+
+            filter.Proizvodi = await query.ToListAsync();
+            return View(filter);
         }
 
-        // GET: Proizvod/Details/5
+        [AllowAnonymous]
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var proizvod = await _context.Proizvod
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (proizvod == null)
-            {
-                return NotFound();
-            }
+            var proizvod = await _context.Proizvod.FirstOrDefaultAsync(m => m.Id == id);
+            if (proizvod == null) return NotFound();
 
             return View(proizvod);
         }
 
-        // GET: Proizvod/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
+        [Authorize(Roles = Uloge.Administrator)]
+        public IActionResult Create() => View();
 
-        // POST: Proizvod/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Naziv,Opis,Cijena,Kategorija,DostupnaKolicina")] Proizvod proizvod)
+        [Authorize(Roles = Uloge.Administrator)]
+        public async Task<IActionResult> Create([Bind("Naziv,Opis,Cijena,Kategorija,Proizvodjac,DostupnaKolicina,SlikaUrl")] Proizvod proizvod)
         {
             if (ModelState.IsValid)
             {
                 _context.Add(proizvod);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "Proizvod uspješno kreiran.";
                 return RedirectToAction(nameof(Index));
             }
             return View(proizvod);
         }
 
-        // GET: Proizvod/Edit/5
+        [Authorize(Roles = Uloge.Administrator)]
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
+            if (id == null) return NotFound();
             var proizvod = await _context.Proizvod.FindAsync(id);
-            if (proizvod == null)
-            {
-                return NotFound();
-            }
+            if (proizvod == null) return NotFound();
             return View(proizvod);
         }
 
-        // POST: Proizvod/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Naziv,Opis,Cijena,Kategorija,DostupnaKolicina")] Proizvod proizvod)
+        [Authorize(Roles = Uloge.Administrator)]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Naziv,Opis,Cijena,Kategorija,Proizvodjac,DostupnaKolicina,SlikaUrl")] Proizvod proizvod)
         {
-            if (id != proizvod.Id)
-            {
-                return NotFound();
-            }
+            if (id != proizvod.Id) return NotFound();
 
             if (ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(proizvod);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ProizvodExists(proizvod.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                _context.Update(proizvod);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Proizvod uspješno ažuriran.";
                 return RedirectToAction(nameof(Index));
             }
             return View(proizvod);
         }
 
-        // GET: Proizvod/Delete/5
+        [Authorize(Roles = Uloge.Administrator)]
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var proizvod = await _context.Proizvod
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (proizvod == null)
-            {
-                return NotFound();
-            }
-
+            if (id == null) return NotFound();
+            var proizvod = await _context.Proizvod.FirstOrDefaultAsync(m => m.Id == id);
+            if (proizvod == null) return NotFound();
             return View(proizvod);
         }
 
-        // POST: Proizvod/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = Uloge.Administrator)]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var proizvod = await _context.Proizvod.FindAsync(id);
-            if (proizvod != null)
-            {
-                _context.Proizvod.Remove(proizvod);
-            }
-
+            if (proizvod != null) _context.Proizvod.Remove(proizvod);
             await _context.SaveChangesAsync();
+            TempData["Success"] = "Proizvod obrisan.";
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool ProizvodExists(int id)
-        {
-            return _context.Proizvod.Any(e => e.Id == id);
         }
     }
 }

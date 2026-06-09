@@ -8,8 +8,12 @@ using Microsoft.EntityFrameworkCore;
 using OCULIS.Data;
 using OCULIS.Models;
 
+using Microsoft.AspNetCore.Authorization;
+using OCULIS.Constants;
+
 namespace OCULIS.Controllers
 {
+    [Authorize(Roles = Uloge.Administrator)]
     public class StavkaKorpeController : Controller
     {
         private readonly ApplicationDbContext _context;

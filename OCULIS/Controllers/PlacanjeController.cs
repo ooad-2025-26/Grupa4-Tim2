@@ -1,164 +1,134 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using OCULIS.Constants;
 using OCULIS.Data;
 using OCULIS.Models;
+using OCULIS.Models.ViewModels;
+using OCULIS.Services.Placanje;
 
 namespace OCULIS.Controllers
 {
+    [Authorize]
     public class PlacanjeController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<Korisnik> _userManager;
+        private readonly IPlacanjeServisFactory _placanjeFactory;
 
-        public PlacanjeController(ApplicationDbContext context)
+        public PlacanjeController(
+            ApplicationDbContext context,
+            UserManager<Korisnik> userManager,
+            IPlacanjeServisFactory placanjeFactory)
         {
             _context = context;
+            _userManager = userManager;
+            _placanjeFactory = placanjeFactory;
         }
 
-        // GET: Placanje
+        [Authorize(Roles = $"{Uloge.Zaposlenik},{Uloge.Administrator}")]
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Placanje.Include(p => p.Narudzba);
-            return View(await applicationDbContext.ToListAsync());
-        }
-
-        // GET: Placanje/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var placanje = await _context.Placanje
+            return View(await _context.Placanje
                 .Include(p => p.Narudzba)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (placanje == null)
+                .ThenInclude(n => n.Korisnik)
+                .OrderByDescending(p => p.DatumPlacanja)
+                .ToListAsync());
+        }
+
+        [Authorize(Roles = Uloge.Kupac)]
+        public async Task<IActionResult> Plati(int narudzbaId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var narudzba = await _context.Narudzba
+                .FirstOrDefaultAsync(n => n.Id == narudzbaId && n.IdKorisnik == user!.Id);
+
+            if (narudzba == null) return NotFound();
+
+            if (await _context.Placanje.AnyAsync(p => p.IdNarudzba == narudzbaId && p.StatusPlacanja == StatusPlacanja.Uspjesno))
             {
-                return NotFound();
+                TempData["Error"] = "Narudžba je već plaćena.";
+                return RedirectToAction("Details", "Narudzba", new { id = narudzbaId });
             }
 
-            return View(placanje);
+            return View(new PlacanjeViewModel
+            {
+                IdNarudzba = narudzba.Id,
+                Iznos = narudzba.UkupnaCijena,
+                StatusNarudzbe = narudzba.Status.ToString()
+            });
         }
 
-        // GET: Placanje/Create
-        public IActionResult Create()
-        {
-            ViewData["IdNarudzba"] = new SelectList(_context.Narudzba, "Id", "Id");
-            return View();
-        }
-
-        // POST: Placanje/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Iznos,StatusPlacanja,DatumPlacanja,IdNarudzba")] Placanje placanje)
+        [Authorize(Roles = Uloge.Kupac)]
+        public async Task<IActionResult> Plati(PlacanjeViewModel model)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(placanje);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["IdNarudzba"] = new SelectList(_context.Narudzba, "Id", "Id", placanje.IdNarudzba);
-            return View(placanje);
-        }
+            var user = await _userManager.GetUserAsync(User);
+            var narudzba = await _context.Narudzba
+                .FirstOrDefaultAsync(n => n.Id == model.IdNarudzba && n.IdKorisnik == user!.Id);
 
-        // GET: Placanje/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
+            if (narudzba == null) return NotFound();
+
+            if (model.NacinPlacanja == NacinPlacanja.KreditnaKartica && string.IsNullOrWhiteSpace(model.BrojKartice))
+                ModelState.AddModelError(nameof(model.BrojKartice), "Broj kartice je obavezan za kartično plaćanje.");
+
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                model.Iznos = narudzba.UkupnaCijena;
+                model.StatusNarudzbe = narudzba.Status.ToString();
+                return View(model);
             }
 
-            var placanje = await _context.Placanje.FindAsync(id);
-            if (placanje == null)
+            var placanje = new Placanje
             {
-                return NotFound();
+                Iznos = narudzba.UkupnaCijena,
+                DatumPlacanja = DateTime.Now,
+                IdNarudzba = narudzba.Id,
+                NacinPlacanja = model.NacinPlacanja,
+                StatusPlacanja = StatusPlacanja.NaCekanju
+            };
+
+            var strategija = _placanjeFactory.Kreiraj(model.NacinPlacanja);
+            var rezultat = await strategija.ObradiPlacanjeAsync(placanje, model.BrojKartice?.Replace(" ", ""));
+
+            placanje.StatusPlacanja = rezultat.Status;
+            placanje.ReferencaTransakcije = rezultat.ReferencaTransakcije;
+
+            _context.Placanje.Add(placanje);
+
+            if (rezultat.Uspjesno)
+            {
+                narudzba.Status = StatusNarudzbe.UObradi;
+                TempData["Success"] = rezultat.Poruka;
             }
-            ViewData["IdNarudzba"] = new SelectList(_context.Narudzba, "Id", "Id", placanje.IdNarudzba);
-            return View(placanje);
-        }
-
-        // POST: Placanje/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Iznos,StatusPlacanja,DatumPlacanja,IdNarudzba")] Placanje placanje)
-        {
-            if (id != placanje.Id)
+            else
             {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(placanje);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!PlacanjeExists(placanje.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["IdNarudzba"] = new SelectList(_context.Narudzba, "Id", "Id", placanje.IdNarudzba);
-            return View(placanje);
-        }
-
-        // GET: Placanje/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var placanje = await _context.Placanje
-                .Include(p => p.Narudzba)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (placanje == null)
-            {
-                return NotFound();
-            }
-
-            return View(placanje);
-        }
-
-        // POST: Placanje/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var placanje = await _context.Placanje.FindAsync(id);
-            if (placanje != null)
-            {
-                _context.Placanje.Remove(placanje);
+                TempData["Error"] = rezultat.Poruka;
             }
 
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Narudzba", new { id = narudzba.Id });
         }
 
-        private bool PlacanjeExists(int id)
+        [Authorize(Roles = $"{Uloge.Zaposlenik},{Uloge.Administrator}")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PotvrdiGotovinu(int id)
         {
-            return _context.Placanje.Any(e => e.Id == id);
+            var placanje = await _context.Placanje
+                .Include(p => p.Narudzba)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (placanje == null) return NotFound();
+
+            placanje.StatusPlacanja = StatusPlacanja.Uspjesno;
+            placanje.Narudzba.Status = StatusNarudzbe.UObradi;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Gotovinsko plaćanje potvrđeno.";
+            return RedirectToAction("Details", "Narudzba", new { id = placanje.IdNarudzba });
         }
     }
 }

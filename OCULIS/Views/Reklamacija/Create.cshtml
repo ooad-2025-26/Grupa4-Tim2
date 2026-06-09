@@ -1,0 +1,23 @@
+@model OCULIS.Models.Reklamacija
+@{ ViewData["Title"] = "Nova reklamacija"; }
+
+<h1 class="page-title">Podnesi reklamaciju</h1>
+<div class="filter-card col-lg-8">
+    <form asp-action="Create">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="mb-3">
+            <label asp-for="IdNarudzba" class="form-label">Narudžba (opcionalno)</label>
+            <select asp-for="IdNarudzba" class="form-select" asp-items="ViewBag.IdNarudzba">
+                <option value="">— Bez narudžbe —</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Opis" class="form-label"></label>
+            <textarea asp-for="Opis" class="form-control" rows="5"></textarea>
+            <span asp-validation-for="Opis" class="text-danger"></span>
+        </div>
+        <button type="submit" class="btn btn-oculis">Podnesi</button>
+        <a asp-action="Index" class="btn btn-secondary">Nazad</a>
+    </form>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

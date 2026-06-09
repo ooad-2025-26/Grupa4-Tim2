@@ -1,164 +1,129 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using OCULIS.Constants;
 using OCULIS.Data;
 using OCULIS.Models;
+using OCULIS.Models.ViewModels;
 
 namespace OCULIS.Controllers
 {
+    [Authorize]
     public class ElektronskiKartonController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<Korisnik> _userManager;
 
-        public ElektronskiKartonController(ApplicationDbContext context)
+        public ElektronskiKartonController(ApplicationDbContext context, UserManager<Korisnik> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
-        // GET: ElektronskiKarton
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.ElektronskiKarton.Include(e => e.Korisnik);
-            return View(await applicationDbContext.ToListAsync());
+            var query = _context.ElektronskiKarton.Include(e => e.Korisnik).AsQueryable();
+
+            if (User.IsInRole(Uloge.Kupac))
+            {
+                var user = await _userManager.GetUserAsync(User);
+                query = query.Where(e => e.IdKorisnik == user!.Id);
+            }
+
+            return View(await query.OrderByDescending(e => e.DatumKreiranja).ToListAsync());
         }
 
-        // GET: ElektronskiKarton/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var elektronskiKarton = await _context.ElektronskiKarton
+            var karton = await _context.ElektronskiKarton
                 .Include(e => e.Korisnik)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (elektronskiKarton == null)
-            {
-                return NotFound();
-            }
+                .FirstOrDefaultAsync(e => e.Id == id);
 
-            return View(elektronskiKarton);
+            if (karton == null) return NotFound();
+            if (!await MozePristupitiAsync(karton)) return Forbid();
+
+            var model = new ElektronskiKartonDetaljiViewModel
+            {
+                Karton = karton,
+                Pregledi = await _context.PregledVida
+                    .Where(p => p.IdElektronskiKarton == id)
+                    .OrderByDescending(p => p.DatumPregleda)
+                    .ToListAsync(),
+                Narudzbe = await _context.Narudzba
+                    .Where(n => n.IdKorisnik == karton.IdKorisnik)
+                    .OrderByDescending(n => n.DatumNarudzbe)
+                    .ToListAsync(),
+                Reklamacije = await _context.Reklamacija
+                    .Where(r => r.IdElektronskiKarton == id || r.IdKorisnik == karton.IdKorisnik)
+                    .OrderByDescending(r => r.DatumPodnosenja)
+                    .ToListAsync()
+            };
+
+            return View(model);
         }
 
-        // GET: ElektronskiKarton/Create
-        public IActionResult Create()
+        [Authorize(Roles = $"{Uloge.Zaposlenik},{Uloge.Administrator}")]
+        public async Task<IActionResult> Create()
         {
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id");
+            ViewData["IdKorisnik"] = new SelectList(
+                await _userManager.Users.Select(u => new { u.Id, Ime = u.Ime + " " + u.Prezime }).ToListAsync(),
+                "Id", "Ime");
             return View();
         }
 
-        // POST: ElektronskiKarton/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,DatumKreiranja,Napomena,IdKorisnik")] ElektronskiKarton elektronskiKarton)
+        [Authorize(Roles = $"{Uloge.Zaposlenik},{Uloge.Administrator}")]
+        public async Task<IActionResult> Create([Bind("Napomena,IdKorisnik")] ElektronskiKarton karton)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(elektronskiKarton);
+                karton.DatumKreiranja = DateTime.Now;
+                _context.Add(karton);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                TempData["Success"] = "Elektronski karton kreiran.";
+                return RedirectToAction(nameof(Details), new { id = karton.Id });
             }
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id", elektronskiKarton.IdKorisnik);
-            return View(elektronskiKarton);
+
+            ViewData["IdKorisnik"] = new SelectList(
+                await _userManager.Users.Select(u => new { u.Id, Ime = u.Ime + " " + u.Prezime }).ToListAsync(),
+                "Id", "Ime", karton.IdKorisnik);
+            return View(karton);
         }
 
-        // GET: ElektronskiKarton/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        [Authorize(Roles = Uloge.Kupac)]
+        public async Task<IActionResult> MojKarton()
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var user = await _userManager.GetUserAsync(User);
+            var karton = await _context.ElektronskiKarton
+                .FirstOrDefaultAsync(e => e.IdKorisnik == user!.Id);
 
-            var elektronskiKarton = await _context.ElektronskiKarton.FindAsync(id);
-            if (elektronskiKarton == null)
+            if (karton == null)
             {
-                return NotFound();
-            }
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id", elektronskiKarton.IdKorisnik);
-            return View(elektronskiKarton);
-        }
-
-        // POST: ElektronskiKarton/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,DatumKreiranja,Napomena,IdKorisnik")] ElektronskiKarton elektronskiKarton)
-        {
-            if (id != elektronskiKarton.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
+                karton = new ElektronskiKarton
                 {
-                    _context.Update(elektronskiKarton);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ElektronskiKartonExists(elektronskiKarton.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                    IdKorisnik = user!.Id,
+                    DatumKreiranja = DateTime.Now,
+                    Napomena = "Automatski kreiran karton korisnika."
+                };
+                _context.ElektronskiKarton.Add(karton);
+                await _context.SaveChangesAsync();
             }
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id", elektronskiKarton.IdKorisnik);
-            return View(elektronskiKarton);
+
+            return RedirectToAction(nameof(Details), new { id = karton.Id });
         }
 
-        // GET: ElektronskiKarton/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        private async Task<bool> MozePristupitiAsync(ElektronskiKarton karton)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (User.IsInRole(Uloge.Administrator) || User.IsInRole(Uloge.Zaposlenik))
+                return true;
 
-            var elektronskiKarton = await _context.ElektronskiKarton
-                .Include(e => e.Korisnik)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (elektronskiKarton == null)
-            {
-                return NotFound();
-            }
-
-            return View(elektronskiKarton);
-        }
-
-        // POST: ElektronskiKarton/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var elektronskiKarton = await _context.ElektronskiKarton.FindAsync(id);
-            if (elektronskiKarton != null)
-            {
-                _context.ElektronskiKarton.Remove(elektronskiKarton);
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool ElektronskiKartonExists(int id)
-        {
-            return _context.ElektronskiKarton.Any(e => e.Id == id);
+            var user = await _userManager.GetUserAsync(User);
+            return user != null && karton.IdKorisnik == user.Id;
         }
     }
 }

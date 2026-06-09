@@ -1,0 +1,47 @@
+@model OCULIS.Models.ViewModels.PlacanjeViewModel
+@{ ViewData["Title"] = "Plaćanje"; }
+
+<h1 class="page-title"><i class="fa-solid fa-credit-card me-2"></i>Plaćanje narudžbe #@Model.IdNarudzba</h1>
+
+<div class="filter-card col-lg-6">
+    <p class="fs-5">Iznos za plaćanje: <strong class="text-primary">@Model.Iznos.ToString("F2") KM</strong></p>
+    <form asp-action="Plati" method="post" id="placanjeForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="IdNarudzba" />
+        <input type="hidden" asp-for="Iznos" />
+        <div class="mb-3">
+            <label asp-for="NacinPlacanja" class="form-label"></label>
+            <select asp-for="NacinPlacanja" class="form-select" id="nacinPlacanja" asp-items="Html.GetEnumSelectList<OCULIS.Models.NacinPlacanja>()"></select>
+        </div>
+        <div class="mb-3" id="karticaGroup">
+            <label asp-for="BrojKartice" class="form-label"></label>
+            <input asp-for="BrojKartice" class="form-control" placeholder="1234 5678 9012 3456" />
+            <span asp-validation-for="BrojKartice" class="text-danger"></span>
+            <small class="text-muted">Simulacija: kartica koja završava na 0000 će biti odbijena.</small>
+        </div>
+        <button type="submit" class="btn btn-oculis" id="btnPlati">
+            <i class="fa-solid fa-lock me-1"></i>Plati
+        </button>
+        <a asp-controller="Narudzba" asp-action="Details" asp-route-id="@Model.IdNarudzba" class="btn btn-secondary">Nazad</a>
+    </form>
+    <div id="loadingPlacanje" class="mt-3 d-none">
+        <div class="spinner-border text-primary" role="status"></div>
+        <span class="ms-2">Obrada transakcije sa eksternim servisom...</span>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function toggleKartica() {
+            var nacin = document.getElementById('nacinPlacanja').value;
+            document.getElementById('karticaGroup').style.display = nacin === '0' ? 'block' : 'none';
+        }
+        document.getElementById('nacinPlacanja').addEventListener('change', toggleKartica);
+        toggleKartica();
+        document.getElementById('placanjeForm').addEventListener('submit', function() {
+            document.getElementById('loadingPlacanje').classList.remove('d-none');
+            document.getElementById('btnPlati').disabled = true;
+        });
+    </script>
+}

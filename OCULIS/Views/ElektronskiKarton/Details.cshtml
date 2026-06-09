@@ -1,36 +1,53 @@
-@model OCULIS.Models.ElektronskiKarton
+@model OCULIS.Models.ViewModels.ElektronskiKartonDetaljiViewModel
+@{ ViewData["Title"] = "Elektronski karton"; }
 
-@{
-    ViewData["Title"] = "Details";
-}
+<h1 class="page-title"><i class="fa-solid fa-folder-open me-2"></i>Elektronski karton</h1>
 
-<h1>Details</h1>
-
-<div>
-    <h4>ElektronskiKarton</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DatumKreiranja)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DatumKreiranja)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Napomena)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Napomena)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Korisnik)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Korisnik.Id)
-        </dd>
-    </dl>
+<div class="filter-card mb-4">
+    <h5>@Model.Karton.Korisnik?.Ime @Model.Karton.Korisnik?.Prezime</h5>
+    <p class="text-muted">Kreiran: @Model.Karton.DatumKreiranja.ToString("dd.MM.yyyy")</p>
+    <p>@Model.Karton.Napomena</p>
+    @if (User.IsInRole("Zaposlenik") || User.IsInRole("Administrator"))
+    {
+        <a asp-controller="PregledVida" asp-action="Create" asp-route-kartonId="@Model.Karton.Id" class="btn btn-sm btn-oculis">Dodaj pregled vida</a>
+    }
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+
+<ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pregledi">Pregledi (@Model.Pregledi.Count)</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#narudzbe">Narudžbe (@Model.Narudzbe.Count)</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#reklamacije">Reklamacije (@Model.Reklamacije.Count)</button></li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="pregledi">
+        @foreach (var p in Model.Pregledi)
+        {
+            <div class="filter-card mb-2">
+                <strong>@p.DatumPregleda.ToString("dd.MM.yyyy")</strong> — L: @p.DioptrijaLijevo / D: @p.DioptrijaDesno
+                <p class="mb-0 text-muted">@p.Preporuka</p>
+            </div>
+        }
+        @if (!Model.Pregledi.Any()) { <p class="text-muted">Nema evidentiranih pregleda.</p> }
+    </div>
+    <div class="tab-pane fade" id="narudzbe">
+        @foreach (var n in Model.Narudzbe)
+        {
+            <div class="filter-card mb-2 d-flex justify-content-between">
+                <span>Narudžba #@n.Id — @n.DatumNarudzbe.ToString("dd.MM.yyyy")</span>
+                <span class="badge bg-info">@n.Status</span>
+                <strong>@n.UkupnaCijena.ToString("F2") KM</strong>
+            </div>
+        }
+    </div>
+    <div class="tab-pane fade" id="reklamacije">
+        @foreach (var r in Model.Reklamacije)
+        {
+            <div class="filter-card mb-2">
+                <span class="badge bg-warning">@r.Status</span> @r.DatumPodnosenja.ToString("dd.MM.yyyy")
+                <p>@r.Opis</p>
+                @if (!string.IsNullOrEmpty(r.Odgovor)) { <p class="text-muted"><em>Odgovor: @r.Odgovor</em></p> }
+            </div>
+        }
+    </div>
 </div>

@@ -1,52 +1,21 @@
 @model OCULIS.Models.PregledVida
+@{ ViewData["Title"] = "Novi pregled vida"; }
 
-@{
-    ViewData["Title"] = "Create";
-}
-
-<h1>Create</h1>
-
-<h4>PregledVida</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="DatumPregleda" class="control-label"></label>
-                <input asp-for="DatumPregleda" class="form-control" />
-                <span asp-validation-for="DatumPregleda" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="DioptrijaLijevo" class="control-label"></label>
-                <input asp-for="DioptrijaLijevo" class="form-control" />
-                <span asp-validation-for="DioptrijaLijevo" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="DioptrijaDesno" class="control-label"></label>
-                <input asp-for="DioptrijaDesno" class="form-control" />
-                <span asp-validation-for="DioptrijaDesno" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Preporuka" class="control-label"></label>
-                <input asp-for="Preporuka" class="form-control" />
-                <span asp-validation-for="Preporuka" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="IdElektronskiKarton" class="control-label"></label>
-                <select asp-for="IdElektronskiKarton" class ="form-control" asp-items="ViewBag.IdElektronskiKarton"></select>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
+<h1 class="page-title">Evidentiraj pregled vida</h1>
+<div class="filter-card col-lg-8">
+    <form asp-action="Create">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="mb-3">
+            <label asp-for="IdElektronskiKarton" class="form-label">Elektronski karton</label>
+            <select asp-for="IdElektronskiKarton" class="form-select" asp-items="ViewBag.IdElektronskiKarton"></select>
+        </div>
+        <div class="mb-3"><label asp-for="DatumPregleda" class="form-label"></label><input asp-for="DatumPregleda" type="date" class="form-control" /></div>
+        <div class="row">
+            <div class="col-md-6 mb-3"><label asp-for="DioptrijaLijevo" class="form-label"></label><input asp-for="DioptrijaLijevo" class="form-control" /></div>
+            <div class="col-md-6 mb-3"><label asp-for="DioptrijaDesno" class="form-label"></label><input asp-for="DioptrijaDesno" class="form-control" /></div>
+        </div>
+        <div class="mb-3"><label asp-for="Preporuka" class="form-label"></label><textarea asp-for="Preporuka" class="form-control" rows="3"></textarea></div>
+        <button type="submit" class="btn btn-oculis">Spremi</button>
+    </form>
 </div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

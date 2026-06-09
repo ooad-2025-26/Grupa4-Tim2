@@ -5,20 +5,27 @@ namespace OCULIS.Models
 {
     public class TerminPregleda
     {
-        public TerminPregleda() { }
-
         [Key]
         public int Id { get; set; }
+
+        [Required]
+        [Display(Name = "Datum")]
+        [DataType(DataType.Date)]
         public DateTime Datum { get; set; }
+
+        [Required]
+        [Display(Name = "Vrijeme")]
         public TimeSpan Vrijeme { get; set; }
+
+        [Display(Name = "Status")]
         public StatusTermina Status { get; set; }
 
-        [ForeignKey("Poslovnica")]
+        [ForeignKey(nameof(Poslovnica))]
         public int IdPoslovnica { get; set; }
-        public Poslovnica Poslovnica { get; set; }
+        public Poslovnica Poslovnica { get; set; } = null!;
 
-        [ForeignKey("Korisnik")]
-        public string IdKorisnik { get; set; }
-        public Korisnik Korisnik { get; set; }
+        [ForeignKey(nameof(Korisnik))]
+        public string IdKorisnik { get; set; } = string.Empty;
+        public Korisnik Korisnik { get; set; } = null!;
     }
 }

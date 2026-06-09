@@ -1,164 +1,173 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using OCULIS.Constants;
 using OCULIS.Data;
 using OCULIS.Models;
+using OCULIS.Models.ViewModels;
+using OCULIS.Services.Popust;
 
 namespace OCULIS.Controllers
 {
+    [Authorize(Roles = $"{Uloge.Kupac},{Uloge.Administrator}")]
     public class KorpaController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<Korisnik> _userManager;
+        private readonly IPopustKalkulatorService _popustService;
 
-        public KorpaController(ApplicationDbContext context)
+        public KorpaController(
+            ApplicationDbContext context,
+            UserManager<Korisnik> userManager,
+            IPopustKalkulatorService popustService)
         {
             _context = context;
+            _userManager = userManager;
+            _popustService = popustService;
         }
 
-        // GET: Korpa
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Korpa.Include(k => k.Korisnik);
-            return View(await applicationDbContext.ToListAsync());
+            var korpa = await DohvatiIliKreirajKorpuAsync();
+            var model = await MapirajKorpuAsync(korpa);
+            return View(model);
         }
 
-        // GET: Korpa/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var korpa = await _context.Korpa
-                .Include(k => k.Korisnik)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (korpa == null)
-            {
-                return NotFound();
-            }
-
-            return View(korpa);
-        }
-
-        // GET: Korpa/Create
-        public IActionResult Create()
-        {
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id");
-            return View();
-        }
-
-        // POST: Korpa/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,UkupnaCijena,IdKorisnik")] Korpa korpa)
+        public async Task<IActionResult> Dodaj(int proizvodId, int kolicina = 1)
         {
-            if (ModelState.IsValid)
+            var proizvod = await _context.Proizvod.FindAsync(proizvodId);
+            if (proizvod == null) return NotFound();
+
+            if (kolicina < 1 || kolicina > proizvod.DostupnaKolicina)
             {
-                _context.Add(korpa);
-                await _context.SaveChangesAsync();
+                TempData["Error"] = "Neispravna količina.";
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id", korpa.IdKorisnik);
-            return View(korpa);
-        }
 
-        // GET: Korpa/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
+            var korpa = await DohvatiIliKreirajKorpuAsync();
+            var stavka = await _context.StavkaKorpe
+                .FirstOrDefaultAsync(s => s.IdKorpa == korpa.Id && s.IdProizvod == proizvodId);
+
+            if (stavka != null)
             {
-                return NotFound();
+                stavka.Kolicina += kolicina;
+                stavka.Cijena = proizvod.Cijena;
             }
-
-            var korpa = await _context.Korpa.FindAsync(id);
-            if (korpa == null)
+            else
             {
-                return NotFound();
-            }
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id", korpa.IdKorisnik);
-            return View(korpa);
-        }
-
-        // POST: Korpa/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,UkupnaCijena,IdKorisnik")] Korpa korpa)
-        {
-            if (id != korpa.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
+                _context.StavkaKorpe.Add(new StavkaKorpe
                 {
-                    _context.Update(korpa);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!KorpaExists(korpa.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id", korpa.IdKorisnik);
-            return View(korpa);
-        }
-
-        // GET: Korpa/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
+                    IdKorpa = korpa.Id,
+                    IdProizvod = proizvodId,
+                    Kolicina = kolicina,
+                    Cijena = proizvod.Cijena
+                });
             }
 
-            var korpa = await _context.Korpa
-                .Include(k => k.Korisnik)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (korpa == null)
-            {
-                return NotFound();
-            }
-
-            return View(korpa);
-        }
-
-        // POST: Korpa/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var korpa = await _context.Korpa.FindAsync(id);
-            if (korpa != null)
-            {
-                _context.Korpa.Remove(korpa);
-            }
-
-            await _context.SaveChangesAsync();
+            await AzurirajUkupnuCijenuKorpeAsync(korpa.Id);
+            TempData["Success"] = $"{proizvod.Naziv} dodan u korpu.";
             return RedirectToAction(nameof(Index));
         }
 
-        private bool KorpaExists(int id)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Ukloni(int stavkaId)
         {
-            return _context.Korpa.Any(e => e.Id == id);
+            var korpa = await DohvatiIliKreirajKorpuAsync();
+            var stavka = await _context.StavkaKorpe
+                .FirstOrDefaultAsync(s => s.Id == stavkaId && s.IdKorpa == korpa.Id);
+
+            if (stavka != null)
+            {
+                _context.StavkaKorpe.Remove(stavka);
+                await _context.SaveChangesAsync();
+                await AzurirajUkupnuCijenuKorpeAsync(korpa.Id);
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> Checkout()
+        {
+            var korpa = await DohvatiIliKreirajKorpuAsync();
+            var stavke = await _context.StavkaKorpe.Where(s => s.IdKorpa == korpa.Id).ToListAsync();
+
+            if (!stavke.Any())
+            {
+                TempData["Error"] = "Korpa je prazna.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            var popust = await _popustService.IzracunajPopustAsync(user!.Id, korpa.Id);
+
+            return View(new NarudzbaCheckoutViewModel
+            {
+                KorpaId = korpa.Id,
+                Popust = popust,
+                Korpa = await MapirajKorpuAsync(korpa)
+            });
+        }
+
+        private async Task<Korpa> DohvatiIliKreirajKorpuAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var korpa = await _context.Korpa
+                .Include(k => k.Stavke)
+                .ThenInclude(s => s.Proizvod)
+                .FirstOrDefaultAsync(k => k.IdKorisnik == user!.Id);
+
+            if (korpa == null)
+            {
+                korpa = new Korpa { IdKorisnik = user!.Id, UkupnaCijena = 0 };
+                _context.Korpa.Add(korpa);
+                await _context.SaveChangesAsync();
+            }
+
+            return korpa;
+        }
+
+        private async Task<KorpaViewModel> MapirajKorpuAsync(Korpa korpa)
+        {
+            var stavke = await _context.StavkaKorpe
+                .Include(s => s.Proizvod)
+                .Where(s => s.IdKorpa == korpa.Id)
+                .ToListAsync();
+
+            var user = await _userManager.GetUserAsync(User);
+            var popust = stavke.Any()
+                ? await _popustService.IzracunajPopustAsync(user!.Id, korpa.Id)
+                : null;
+
+            return new KorpaViewModel
+            {
+                KorpaId = korpa.Id,
+                UkupnaCijena = stavke.Sum(s => s.Cijena * s.Kolicina),
+                Popust = popust,
+                Stavke = stavke.Select(s => new StavkaKorpeViewModel
+                {
+                    Id = s.Id,
+                    IdProizvod = s.IdProizvod,
+                    NazivProizvoda = s.Proizvod.Naziv,
+                    Kolicina = s.Kolicina,
+                    Cijena = s.Cijena
+                }).ToList()
+            };
+        }
+
+        private async Task AzurirajUkupnuCijenuKorpeAsync(int korpaId)
+        {
+            var korpa = await _context.Korpa.FindAsync(korpaId);
+            if (korpa == null) return;
+
+            korpa.UkupnaCijena = await _context.StavkaKorpe
+                .Where(s => s.IdKorpa == korpaId)
+                .SumAsync(s => s.Cijena * s.Kolicina);
+
+            await _context.SaveChangesAsync();
         }
     }
 }

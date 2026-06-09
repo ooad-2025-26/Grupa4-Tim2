@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using OCULIS.Models;
-using System.Collections;
 
 namespace OCULIS.Data
 {
@@ -22,10 +21,14 @@ namespace OCULIS.Data
         public DbSet<TerminPregleda> TerminPregleda { get; set; }
         public DbSet<ElektronskiKarton> ElektronskiKarton { get; set; }
         public DbSet<PregledVida> PregledVida { get; set; }
-        public IEnumerable Korisnik { get; internal set; }
+        public DbSet<Reklamacija> Reklamacija { get; set; }
+        public DbSet<Akcija> Akcija { get; set; }
+        public DbSet<StavkaNarudzbe> StavkaNarudzbe { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<Proizvod>().ToTable("Proizvod");
             modelBuilder.Entity<Korpa>().ToTable("Korpa");
             modelBuilder.Entity<StavkaKorpe>().ToTable("StavkaKorpe");
@@ -36,12 +39,39 @@ namespace OCULIS.Data
             modelBuilder.Entity<TerminPregleda>().ToTable("TerminPregleda");
             modelBuilder.Entity<ElektronskiKarton>().ToTable("ElektronskiKarton");
             modelBuilder.Entity<PregledVida>().ToTable("PregledVida");
+            modelBuilder.Entity<Reklamacija>().ToTable("Reklamacija");
+            modelBuilder.Entity<Akcija>().ToTable("Akcija");
+            modelBuilder.Entity<StavkaNarudzbe>().ToTable("StavkaNarudzbe");
 
             modelBuilder.Entity<Narudzba>()
-       .HasOne(n => n.Korisnik)
-       .WithMany()
-       .HasForeignKey(n => n.IdKorisnik)
-       .OnDelete(DeleteBehavior.NoAction);
+                .HasMany(n => n.Stavke)
+                .WithOne(s => s.Narudzba)
+                .HasForeignKey(s => s.IdNarudzba)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StavkaNarudzbe>()
+                .HasOne(s => s.Proizvod)
+                .WithMany()
+                .HasForeignKey(s => s.IdProizvod)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Korpa>()
+                .HasOne(k => k.Korisnik)
+                .WithMany()
+                .HasForeignKey(k => k.IdKorisnik)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Korpa>()
+                .HasMany(k => k.Stavke)
+                .WithOne(s => s.Korpa)
+                .HasForeignKey(s => s.IdKorpa)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Narudzba>()
+                .HasOne(n => n.Korisnik)
+                .WithMany()
+                .HasForeignKey(n => n.IdKorisnik)
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Narudzba>()
                 .HasOne(n => n.Korpa)
@@ -49,7 +79,47 @@ namespace OCULIS.Data
                 .HasForeignKey(n => n.IdKorpa)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Placanje>()
+                .HasOne(p => p.Narudzba)
+                .WithMany(n => n.Placanja)
+                .HasForeignKey(p => p.IdNarudzba)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TerminPregleda>()
+                .HasOne(t => t.Korisnik)
+                .WithMany()
+                .HasForeignKey(t => t.IdKorisnik)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<TerminPregleda>()
+                .HasOne(t => t.Poslovnica)
+                .WithMany()
+                .HasForeignKey(t => t.IdPoslovnica)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ElektronskiKarton>()
+                .HasOne(e => e.Korisnik)
+                .WithMany()
+                .HasForeignKey(e => e.IdKorisnik)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ElektronskiKarton>()
+                .HasMany(e => e.Pregledi)
+                .WithOne(p => p.ElektronskiKarton)
+                .HasForeignKey(p => p.IdElektronskiKarton)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Reklamacija>()
+                .HasOne(r => r.Korisnik)
+                .WithMany()
+                .HasForeignKey(r => r.IdKorisnik)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Akcija>()
+                .HasOne(a => a.Proizvod)
+                .WithMany()
+                .HasForeignKey(a => a.IdProizvod)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

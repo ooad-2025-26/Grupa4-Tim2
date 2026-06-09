@@ -1,54 +1,74 @@
 @model OCULIS.Models.Narudzba
+@{ ViewData["Title"] = $"Narudžba #{Model.Id}"; }
 
-@{
-    ViewData["Title"] = "Details";
+<h1 class="page-title">Narudžba #@Model.Id</h1>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="filter-card">
+            <h5>Informacije</h5>
+            <dl class="row mb-0">
+                <dt class="col-5">Datum</dt><dd class="col-7">@Model.DatumNarudzbe.ToString("dd.MM.yyyy HH:mm")</dd>
+                <dt class="col-5">Status</dt><dd class="col-7"><span class="badge bg-info">@Model.Status</span></dd>
+                <dt class="col-5">Adresa</dt><dd class="col-7">@Model.AdresaIsporuke</dd>
+                <dt class="col-5">Osnovna cijena</dt><dd class="col-7">@Model.OsnovnaCijena.ToString("F2") KM</dd>
+                <dt class="col-5">Popust</dt><dd class="col-7">@Model.PopustPostotak% (-@Model.PopustIznos.ToString("F2") KM)</dd>
+                <dt class="col-5">Ukupno</dt><dd class="col-7 fw-bold text-primary">@Model.UkupnaCijena.ToString("F2") KM</dd>
+            </dl>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="filter-card">
+            <h5>Stavke</h5>
+            @if (Model.Stavke.Any())
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var s in Model.Stavke)
+                    {
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>@(s.NazivProizvoda ?? s.Proizvod?.Naziv ?? "Proizvod") x @s.Kolicina</span>
+                            <span>@((s.Cijena * s.Kolicina).ToString("F2")) KM</span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p class="text-muted mb-0">Stavke nisu sačuvane za ovu narudžbu (kreirana prije ažuriranja sistema).</p>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="mt-3 d-flex gap-2">
+    @if (User.IsInRole("Kupac") && !Model.Placanja.Any(p => p.StatusPlacanja == OCULIS.Models.StatusPlacanja.Uspjesno))
+    {
+        <a asp-controller="Placanje" asp-action="Plati" asp-route-narudzbaId="@Model.Id" class="btn btn-oculis">Plati narudžbu</a>
+    }
+    @if (User.IsInRole("Zaposlenik") || User.IsInRole("Administrator"))
+    {
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Promijeni status</a>
+    }
+    <a asp-action="Index" class="btn btn-secondary">Nazad</a>
+</div>
+
+@if (Model.Placanja.Any())
+{
+    <div class="filter-card mt-4">
+        <h5>Plaćanja</h5>
+        @foreach (var p in Model.Placanja)
+        {
+            <p>@p.NacinPlacanja — @p.StatusPlacanja — @p.Iznos.ToString("F2") KM
+                @if (!string.IsNullOrEmpty(p.ReferencaTransakcije)) { <span class="text-muted">(@p.ReferencaTransakcije)</span> }
+                @if (p.NacinPlacanja == OCULIS.Models.NacinPlacanja.Gotovina && p.StatusPlacanja == OCULIS.Models.StatusPlacanja.NaCekanju && (User.IsInRole("Zaposlenik") || User.IsInRole("Administrator")))
+                {
+                    <form asp-controller="Placanje" asp-action="PotvrdiGotovinu" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@p.Id" />
+                        <button class="btn btn-sm btn-success">Potvrdi gotovinu</button>
+                    </form>
+                }
+            </p>
+        }
+    </div>
 }
-
-<h1>Details</h1>
-
-<div>
-    <h4>Narudzba</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DatumNarudzbe)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DatumNarudzbe)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Status)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Status)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.UkupnaCijena)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.UkupnaCijena)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.AdresaIsporuke)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.AdresaIsporuke)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Korisnik)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Korisnik.Id)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Korpa)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Korpa.Id)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>

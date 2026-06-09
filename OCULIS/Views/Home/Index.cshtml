@@ -1,8 +1,59 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Početna";
+    var proizvodi = ViewBag.IstaknutiProizvodi as IEnumerable<OCULIS.Models.Proizvod>;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="hero-section text-center">
+    <h1 class="display-5 fw-bold mb-3"><i class="fa-solid fa-glasses me-2"></i>OCULIS Optika</h1>
+    <p class="lead mb-4">Pregled proizvoda, online kupovina, zakazivanje pregleda vida i elektronski karton — sve na jednom mjestu.</p>
+    <div class="d-flex gap-2 justify-content-center flex-wrap">
+        <a asp-controller="Proizvod" asp-action="Index" class="btn btn-light btn-lg">Pregledaj proizvode</a>
+        <a asp-controller="Poslovnica" asp-action="Index" class="btn btn-outline-light btn-lg">Pronađi poslovnicu</a>
+        @if (!User.Identity?.IsAuthenticated ?? true)
+        {
+            <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-oculis btn-lg">Registruj se</a>
+        }
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <i class="fa-solid fa-box fa-2x text-primary mb-2"></i>
+            <h3>@ViewBag.UkupnoProizvoda</h3>
+            <p class="text-muted mb-0">Proizvoda u ponudi</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <i class="fa-solid fa-store fa-2x text-primary mb-2"></i>
+            <h3>@ViewBag.UkupnoPoslovnica</h3>
+            <p class="text-muted mb-0">Poslovnica</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <i class="fa-solid fa-eye fa-2x text-primary mb-2"></i>
+            <h3>Online</h3>
+            <p class="text-muted mb-0">Zakazivanje pregleda</p>
+        </div>
+    </div>
+</div>
+
+<h2 class="page-title">Istaknuti proizvodi</h2>
+<div class="row g-4">
+    @foreach (var p in proizvodi ?? Enumerable.Empty<OCULIS.Models.Proizvod>())
+    {
+        <div class="col-md-6 col-lg-3">
+            <div class="product-card">
+                <div class="card-img-top"><i class="fa-solid fa-glasses"></i></div>
+                <div class="card-body">
+                    <h5 class="card-title">@p.Naziv</h5>
+                    <p class="text-muted small">@p.Proizvodjac</p>
+                    <p class="fw-bold text-primary">@p.Cijena.ToString("F2") KM</p>
+                    <a asp-controller="Proizvod" asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-oculis">Detalji</a>
+                </div>
+            </div>
+        </div>
+    }
 </div>

@@ -1,170 +1,162 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using OCULIS.Constants;
 using OCULIS.Data;
 using OCULIS.Models;
+using OCULIS.Models.ViewModels;
+using OCULIS.Services.Obavijest;
+using OCULIS.Services.Popust;
 
 namespace OCULIS.Controllers
 {
+    [Authorize]
     public class NarudzbaController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<Korisnik> _userManager;
+        private readonly IPopustKalkulatorService _popustService;
+        private readonly IObavijestServis _obavijestServis;
 
-        public NarudzbaController(ApplicationDbContext context)
+        public NarudzbaController(
+            ApplicationDbContext context,
+            UserManager<Korisnik> userManager,
+            IPopustKalkulatorService popustService,
+            IObavijestServis obavijestServis)
         {
             _context = context;
+            _userManager = userManager;
+            _popustService = popustService;
+            _obavijestServis = obavijestServis;
         }
 
-        // GET: Narudzba
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Narudzba.Include(n => n.Korisnik).Include(n => n.Korpa);
-            return View(await applicationDbContext.ToListAsync());
+            var query = _context.Narudzba
+                .Include(n => n.Korisnik)
+                .Include(n => n.Stavke)
+                .ThenInclude(s => s.Proizvod)
+                .AsQueryable();
+
+            if (User.IsInRole(Uloge.Kupac))
+            {
+                var user = await _userManager.GetUserAsync(User);
+                query = query.Where(n => n.IdKorisnik == user!.Id);
+            }
+
+            return View(await query.OrderByDescending(n => n.DatumNarudzbe).ToListAsync());
         }
 
-        // GET: Narudzba/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var narudzba = await _context.Narudzba
                 .Include(n => n.Korisnik)
-                .Include(n => n.Korpa)
+                .Include(n => n.Stavke)
+                .ThenInclude(s => s.Proizvod)
+                .Include(n => n.Placanja)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (narudzba == null)
-            {
-                return NotFound();
-            }
+
+            if (narudzba == null) return NotFound();
+            if (!await MozePristupitiAsync(narudzba)) return Forbid();
 
             return View(narudzba);
         }
 
-        // GET: Narudzba/Create
-        public IActionResult Create()
-        {
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id");
-            ViewData["IdKorpa"] = new SelectList(_context.Korpa, "Id", "Id");
-            return View();
-        }
-
-        // POST: Narudzba/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [Authorize(Roles = Uloge.Kupac)]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,DatumNarudzbe,Status,UkupnaCijena,AdresaIsporuke,IdKorisnik,IdKorpa")] Narudzba narudzba)
+        public async Task<IActionResult> Kreiraj(NarudzbaCheckoutViewModel model)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(narudzba);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id", narudzba.IdKorisnik);
-            ViewData["IdKorpa"] = new SelectList(_context.Korpa, "Id", "Id", narudzba.IdKorpa);
-            return View(narudzba);
-        }
+            var user = await _userManager.GetUserAsync(User);
+            var korpa = await _context.Korpa
+                .Include(k => k.Stavke)
+                .ThenInclude(s => s.Proizvod)
+                .FirstOrDefaultAsync(k => k.Id == model.KorpaId && k.IdKorisnik == user!.Id);
 
-        // GET: Narudzba/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
+            if (korpa == null || !korpa.Stavke.Any())
             {
-                return NotFound();
+                TempData["Error"] = "Korpa je prazna.";
+                return RedirectToAction("Index", "Korpa");
             }
 
-            var narudzba = await _context.Narudzba.FindAsync(id);
-            if (narudzba == null)
-            {
-                return NotFound();
-            }
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id", narudzba.IdKorisnik);
-            ViewData["IdKorpa"] = new SelectList(_context.Korpa, "Id", "Id", narudzba.IdKorpa);
-            return View(narudzba);
-        }
+            var popust = await _popustService.IzracunajPopustAsync(user!.Id, korpa.Id);
 
-        // POST: Narudzba/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,DatumNarudzbe,Status,UkupnaCijena,AdresaIsporuke,IdKorisnik,IdKorpa")] Narudzba narudzba)
-        {
-            if (id != narudzba.Id)
+            var narudzba = new Narudzba
             {
-                return NotFound();
-            }
+                DatumNarudzbe = DateTime.Now,
+                Status = StatusNarudzbe.Zaprimljena,
+                OsnovnaCijena = popust.OsnovnaCijena,
+                PopustPostotak = popust.PopustPostotak,
+                PopustIznos = popust.PopustIznos,
+                UkupnaCijena = popust.UkupnaCijena,
+                AdresaIsporuke = model.AdresaIsporuke,
+                IdKorisnik = user.Id,
+                IdKorpa = korpa.Id
+            };
 
-            if (ModelState.IsValid)
+            foreach (var stavka in korpa.Stavke)
             {
-                try
+                narudzba.Stavke.Add(new StavkaNarudzbe
                 {
-                    _context.Update(narudzba);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!NarudzbaExists(narudzba.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id", narudzba.IdKorisnik);
-            ViewData["IdKorpa"] = new SelectList(_context.Korpa, "Id", "Id", narudzba.IdKorpa);
-            return View(narudzba);
-        }
+                    IdProizvod = stavka.IdProizvod,
+                    NazivProizvoda = stavka.Proizvod?.Naziv ?? "Proizvod",
+                    Kolicina = stavka.Kolicina,
+                    Cijena = stavka.Cijena
+                });
 
-        // GET: Narudzba/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
+                var proizvod = await _context.Proizvod.FindAsync(stavka.IdProizvod);
+                if (proizvod != null)
+                    proizvod.DostupnaKolicina = Math.Max(0, proizvod.DostupnaKolicina - stavka.Kolicina);
             }
 
-            var narudzba = await _context.Narudzba
-                .Include(n => n.Korisnik)
-                .Include(n => n.Korpa)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (narudzba == null)
-            {
-                return NotFound();
-            }
+            _context.Narudzba.Add(narudzba);
+            _context.StavkaKorpe.RemoveRange(korpa.Stavke);
+            korpa.UkupnaCijena = 0;
 
-            return View(narudzba);
-        }
-
-        // POST: Narudzba/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var narudzba = await _context.Narudzba.FindAsync(id);
-            if (narudzba != null)
-            {
-                _context.Narudzba.Remove(narudzba);
-            }
+            user.BrojNarudzbi++;
+            user.LojalnostBodovi += (int)(popust.UkupnaCijena / 10);
+            await _userManager.UpdateAsync(user);
 
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            await _obavijestServis.PosaljiObavijestNarudzbaAsync(user.Id, narudzba.Id);
+
+            TempData["Success"] = $"Narudžba #{narudzba.Id} uspješno kreirana.";
+            return RedirectToAction(nameof(Details), new { id = narudzba.Id });
         }
 
-        private bool NarudzbaExists(int id)
+        [Authorize(Roles = $"{Uloge.Zaposlenik},{Uloge.Administrator}")]
+        public async Task<IActionResult> Edit(int? id)
         {
-            return _context.Narudzba.Any(e => e.Id == id);
+            if (id == null) return NotFound();
+            var narudzba = await _context.Narudzba.FindAsync(id);
+            if (narudzba == null) return NotFound();
+            return View(narudzba);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = $"{Uloge.Zaposlenik},{Uloge.Administrator}")]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Status")] Narudzba model)
+        {
+            var narudzba = await _context.Narudzba.FindAsync(id);
+            if (narudzba == null) return NotFound();
+
+            narudzba.Status = model.Status;
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Status narudžbe ažuriran.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        private async Task<bool> MozePristupitiAsync(Narudzba narudzba)
+        {
+            if (User.IsInRole(Uloge.Administrator) || User.IsInRole(Uloge.Zaposlenik))
+                return true;
+
+            var user = await _userManager.GetUserAsync(User);
+            return user != null && narudzba.IdKorisnik == user.Id;
         }
     }
 }

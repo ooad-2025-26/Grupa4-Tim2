@@ -1,54 +1,15 @@
 @model OCULIS.Models.TerminPregleda
+@{ ViewData["Title"] = "Uredi termin"; }
 
-@{
-    ViewData["Title"] = "Edit";
-}
-
-<h1>Edit</h1>
-
-<h4>TerminPregleda</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
-            <div class="form-group">
-                <label asp-for="Datum" class="control-label"></label>
-                <input asp-for="Datum" class="form-control" />
-                <span asp-validation-for="Datum" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Vrijeme" class="control-label"></label>
-                <input asp-for="Vrijeme" class="form-control" />
-                <span asp-validation-for="Vrijeme" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Status" class="control-label"></label>
-                <select asp-for="Status" class="form-control"></select>
-                <span asp-validation-for="Status" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="IdPoslovnica" class="control-label"></label>
-                <select asp-for="IdPoslovnica" class="form-control" asp-items="ViewBag.IdPoslovnica"></select>
-                <span asp-validation-for="IdPoslovnica" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="IdKorisnik" class="control-label"></label>
-                <select asp-for="IdKorisnik" class="form-control" asp-items="ViewBag.IdKorisnik"></select>
-                <span asp-validation-for="IdKorisnik" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
+<h1 class="page-title">Uredi status termina</h1>
+<div class="filter-card col-lg-6">
+    <form asp-action="Edit">
+        <input type="hidden" asp-for="Id" />
+        <div class="mb-3">
+            <label asp-for="Status" class="form-label"></label>
+            <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<OCULIS.Models.StatusTermina>()"></select>
+        </div>
+        <button type="submit" class="btn btn-oculis">Spremi</button>
+        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Nazad</a>
+    </form>
 </div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}

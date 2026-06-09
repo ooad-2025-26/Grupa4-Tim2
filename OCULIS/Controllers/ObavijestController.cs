@@ -1,164 +1,81 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using OCULIS.Constants;
 using OCULIS.Data;
 using OCULIS.Models;
+using OCULIS.Services.Obavijest;
 
 namespace OCULIS.Controllers
 {
+    [Authorize]
     public class ObavijestController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<Korisnik> _userManager;
+        private readonly IObavijestServis _obavijestServis;
 
-        public ObavijestController(ApplicationDbContext context)
+        public ObavijestController(
+            ApplicationDbContext context,
+            UserManager<Korisnik> userManager,
+            IObavijestServis obavijestServis)
         {
             _context = context;
+            _userManager = userManager;
+            _obavijestServis = obavijestServis;
         }
 
-        // GET: Obavijest
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Obavijest.Include(o => o.Korisnik);
-            return View(await applicationDbContext.ToListAsync());
+            var query = _context.Obavijest.Include(o => o.Korisnik).AsQueryable();
+
+            if (User.IsInRole(Uloge.Kupac))
+            {
+                var user = await _userManager.GetUserAsync(User);
+                query = query.Where(o => o.IdKorisnik == user!.Id);
+            }
+
+            return View(await query.OrderByDescending(o => o.DatumSlanja).ToListAsync());
         }
 
-        // GET: Obavijest/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var obavijest = await _context.Obavijest
                 .Include(o => o.Korisnik)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (obavijest == null)
+
+            if (obavijest == null) return NotFound();
+
+            if (User.IsInRole(Uloge.Kupac))
             {
-                return NotFound();
+                var user = await _userManager.GetUserAsync(User);
+                if (obavijest.IdKorisnik != user!.Id) return Forbid();
             }
 
             return View(obavijest);
         }
 
-        // GET: Obavijest/Create
-        public IActionResult Create()
-        {
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id");
-            return View();
-        }
+        [Authorize(Roles = Uloge.Administrator)]
+        public IActionResult Create() => View();
 
-        // POST: Obavijest/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Naslov,Tekst,DatumSlanja,IdKorisnik")] Obavijest obavijest)
+        [Authorize(Roles = Uloge.Administrator)]
+        public async Task<IActionResult> Create(string emailKorisnika, string naslov, string tekst)
         {
-            if (ModelState.IsValid)
+            var korisnik = await _userManager.FindByEmailAsync(emailKorisnika);
+            if (korisnik == null)
             {
-                _context.Add(obavijest);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id", obavijest.IdKorisnik);
-            return View(obavijest);
-        }
-
-        // GET: Obavijest/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
+                ModelState.AddModelError(string.Empty, "Korisnik sa unesenim emailom nije pronađen.");
+                return View();
             }
 
-            var obavijest = await _context.Obavijest.FindAsync(id);
-            if (obavijest == null)
-            {
-                return NotFound();
-            }
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id", obavijest.IdKorisnik);
-            return View(obavijest);
-        }
-
-        // POST: Obavijest/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Naslov,Tekst,DatumSlanja,IdKorisnik")] Obavijest obavijest)
-        {
-            if (id != obavijest.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(obavijest);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ObavijestExists(obavijest.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["IdKorisnik"] = new SelectList(_context.Korisnik, "Id", "Id", obavijest.IdKorisnik);
-            return View(obavijest);
-        }
-
-        // GET: Obavijest/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var obavijest = await _context.Obavijest
-                .Include(o => o.Korisnik)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (obavijest == null)
-            {
-                return NotFound();
-            }
-
-            return View(obavijest);
-        }
-
-        // POST: Obavijest/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var obavijest = await _context.Obavijest.FindAsync(id);
-            if (obavijest != null)
-            {
-                _context.Obavijest.Remove(obavijest);
-            }
-
-            await _context.SaveChangesAsync();
+            await _obavijestServis.PosaljiObavijestAsync(korisnik.Id, naslov, tekst);
+            TempData["Success"] = "Obavijest poslana.";
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool ObavijestExists(int id)
-        {
-            return _context.Obavijest.Any(e => e.Id == id);
         }
     }
 }

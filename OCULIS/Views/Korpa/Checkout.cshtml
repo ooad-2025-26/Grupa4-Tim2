@@ -1,0 +1,39 @@
+@model OCULIS.Models.ViewModels.NarudzbaCheckoutViewModel
+@{ ViewData["Title"] = "Potvrda narudžbe"; }
+
+<h1 class="page-title">Potvrda narudžbe</h1>
+
+<div class="row">
+    <div class="col-lg-7">
+        <div class="filter-card">
+            <h5>Stavke</h5>
+            <ul class="list-group list-group-flush mb-3">
+                @foreach (var s in Model.Korpa.Stavke)
+                {
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>@s.NazivProizvoda x @s.Kolicina</span>
+                        <span>@s.Ukupno.ToString("F2") KM</span>
+                    </li>
+                }
+            </ul>
+            <p>Osnovna cijena: @Model.Popust.OsnovnaCijena.ToString("F2") KM</p>
+            <p>Popust: @Model.Popust.PopustPostotak% (-@Model.Popust.PopustIznos.ToString("F2") KM)</p>
+            <p class="fs-5 fw-bold text-primary">Ukupno: @Model.Popust.UkupnaCijena.ToString("F2") KM</p>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="filter-card">
+            <form asp-controller="Narudzba" asp-action="Kreiraj" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="KorpaId" />
+                <div class="mb-3">
+                    <label asp-for="AdresaIsporuke" class="form-label"></label>
+                    <textarea asp-for="AdresaIsporuke" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="AdresaIsporuke" class="text-danger"></span>
+                </div>
+                <button type="submit" class="btn btn-oculis w-100">Potvrdi narudžbu</button>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

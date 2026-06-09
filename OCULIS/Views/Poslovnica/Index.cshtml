@@ -1,53 +1,59 @@
 @model IEnumerable<OCULIS.Models.Poslovnica>
-
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Poslovnice";
+    var apiKey = ViewBag.GoogleMapsApiKey as string ?? "";
 }
 
-<h1>Index</h1>
+<h1 class="page-title"><i class="fa-solid fa-map-location-dot me-2"></i>Poslovnice</h1>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Naziv)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Adresa)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Telefon)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.RadnoVrijeme)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Naziv)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Adresa)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Telefon)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.RadnoVrijeme)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
+<div id="map" class="mb-4"></div>
+
+<div class="row g-4">
+@foreach (var p in Model)
+{
+    <div class="col-md-4">
+        <div class="filter-card h-100">
+            <h5><i class="fa-solid fa-store me-2 text-primary"></i>@p.Naziv</h5>
+            <p><i class="fa-solid fa-location-dot me-1"></i>@p.Adresa</p>
+            <p><i class="fa-solid fa-phone me-1"></i>@p.Telefon</p>
+            <p><i class="fa-solid fa-clock me-1"></i>@p.RadnoVrijeme</p>
+            <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-oculis">Detalji i navigacija</a>
+        </div>
+    </div>
 }
-    </tbody>
-</table>
+</div>
+
+@if (User.IsInRole("Administrator"))
+{
+    <a asp-action="Create" class="btn btn-outline-primary mt-3">Nova poslovnica</a>
+}
+
+@section Scripts {
+<script>
+    const poslovnice = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Select(p => new { p.Id, p.Naziv, p.Adresa, p.Latitude, p.Longitude })));
+    function initMap() {
+        if (!poslovnice.length) return;
+        const center = { lat: poslovnice[0].Latitude || 43.85, lng: poslovnice[0].Longitude || 18.41 };
+        const map = new google.maps.Map(document.getElementById('map'), { zoom: 8, center });
+        poslovnice.forEach(p => {
+            if (p.Latitude && p.Longitude) {
+                new google.maps.Marker({
+                    position: { lat: p.Latitude, lng: p.Longitude },
+                    map,
+                    title: p.Naziv
+                });
+            }
+        });
+    }
+</script>
+@if (!string.IsNullOrEmpty(apiKey))
+{
+    <script src="https://maps.googleapis.com/maps/api/js?key=@apiKey&callback=initMap" async defer></script>
+}
+else
+{
+    <script>
+        document.getElementById('map').innerHTML = '<div class="alert alert-warning m-3">Google Maps API ključ nije konfigurisan. Dodajte ga u appsettings.json pod GoogleMaps:ApiKey. Koordinate poslovnica su prikazane u karticama ispod.</div>';
+    </script>
+}
+}

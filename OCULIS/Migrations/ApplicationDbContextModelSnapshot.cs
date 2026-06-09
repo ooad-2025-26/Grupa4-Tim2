@@ -159,6 +159,41 @@ namespace OCULIS.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("OCULIS.Models.Akcija", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Aktivna")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("DatumPocetka")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DatumZavrsetka")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("IdProizvod")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Naziv")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<double>("PopustPostotak")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdProizvod");
+
+                    b.ToTable("Akcija", (string)null);
+                });
+
             modelBuilder.Entity("OCULIS.Models.ElektronskiKarton", b =>
                 {
                     b.Property<int>("Id")
@@ -176,7 +211,8 @@ namespace OCULIS.Migrations
 
                     b.Property<string>("Napomena")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.HasKey("Id");
 
@@ -193,6 +229,9 @@ namespace OCULIS.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<int>("BrojNarudzbi")
+                        .HasColumnType("int");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
@@ -206,13 +245,17 @@ namespace OCULIS.Migrations
 
                     b.Property<string>("Ime")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("LojalnostBodovi")
+                        .HasColumnType("int");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -233,7 +276,8 @@ namespace OCULIS.Migrations
 
                     b.Property<string>("Prezime")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -293,7 +337,8 @@ namespace OCULIS.Migrations
 
                     b.Property<string>("AdresaIsporuke")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
 
                     b.Property<DateTime>("DatumNarudzbe")
                         .HasColumnType("datetime2");
@@ -304,6 +349,15 @@ namespace OCULIS.Migrations
 
                     b.Property<int>("IdKorpa")
                         .HasColumnType("int");
+
+                    b.Property<double>("OsnovnaCijena")
+                        .HasColumnType("float");
+
+                    b.Property<double>("PopustIznos")
+                        .HasColumnType("float");
+
+                    b.Property<double>("PopustPostotak")
+                        .HasColumnType("float");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -337,11 +391,16 @@ namespace OCULIS.Migrations
 
                     b.Property<string>("Naslov")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<bool>("PoslanoEmailom")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Tekst")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.HasKey("Id");
 
@@ -367,6 +426,13 @@ namespace OCULIS.Migrations
                     b.Property<double>("Iznos")
                         .HasColumnType("float");
 
+                    b.Property<int>("NacinPlacanja")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReferencaTransakcije")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<int>("StatusPlacanja")
                         .HasColumnType("int");
 
@@ -387,19 +453,29 @@ namespace OCULIS.Migrations
 
                     b.Property<string>("Adresa")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("float");
 
                     b.Property<string>("Naziv")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("RadnoVrijeme")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Telefon")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
 
@@ -428,7 +504,8 @@ namespace OCULIS.Migrations
 
                     b.Property<string>("Preporuka")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.HasKey("Id");
 
@@ -456,15 +533,69 @@ namespace OCULIS.Migrations
 
                     b.Property<string>("Naziv")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<string>("Opis")
                         .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Proizvodjac")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SlikaUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.ToTable("Proizvod", (string)null);
+                });
+
+            modelBuilder.Entity("OCULIS.Models.Reklamacija", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("DatumPodnosenja")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("IdElektronskiKarton")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IdKorisnik")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("IdNarudzba")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Odgovor")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Opis")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdElektronskiKarton");
+
+                    b.HasIndex("IdKorisnik");
+
+                    b.HasIndex("IdNarudzba");
+
+                    b.ToTable("Reklamacija", (string)null);
                 });
 
             modelBuilder.Entity("OCULIS.Models.StavkaKorpe", b =>
@@ -494,6 +625,40 @@ namespace OCULIS.Migrations
                     b.HasIndex("IdProizvod");
 
                     b.ToTable("StavkaKorpe", (string)null);
+                });
+
+            modelBuilder.Entity("OCULIS.Models.StavkaNarudzbe", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<double>("Cijena")
+                        .HasColumnType("float");
+
+                    b.Property<int>("IdNarudzba")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdProizvod")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Kolicina")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NazivProizvoda")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdNarudzba");
+
+                    b.HasIndex("IdProizvod");
+
+                    b.ToTable("StavkaNarudzbe", (string)null);
                 });
 
             modelBuilder.Entity("OCULIS.Models.TerminPregleda", b =>
@@ -580,12 +745,22 @@ namespace OCULIS.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("OCULIS.Models.Akcija", b =>
+                {
+                    b.HasOne("OCULIS.Models.Proizvod", "Proizvod")
+                        .WithMany()
+                        .HasForeignKey("IdProizvod")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Proizvod");
+                });
+
             modelBuilder.Entity("OCULIS.Models.ElektronskiKarton", b =>
                 {
                     b.HasOne("OCULIS.Models.Korisnik", "Korisnik")
                         .WithMany()
                         .HasForeignKey("IdKorisnik")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Korisnik");
@@ -596,7 +771,7 @@ namespace OCULIS.Migrations
                     b.HasOne("OCULIS.Models.Korisnik", "Korisnik")
                         .WithMany()
                         .HasForeignKey("IdKorisnik")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Korisnik");
@@ -635,7 +810,7 @@ namespace OCULIS.Migrations
             modelBuilder.Entity("OCULIS.Models.Placanje", b =>
                 {
                     b.HasOne("OCULIS.Models.Narudzba", "Narudzba")
-                        .WithMany()
+                        .WithMany("Placanja")
                         .HasForeignKey("IdNarudzba")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -646,7 +821,7 @@ namespace OCULIS.Migrations
             modelBuilder.Entity("OCULIS.Models.PregledVida", b =>
                 {
                     b.HasOne("OCULIS.Models.ElektronskiKarton", "ElektronskiKarton")
-                        .WithMany()
+                        .WithMany("Pregledi")
                         .HasForeignKey("IdElektronskiKarton")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -654,10 +829,33 @@ namespace OCULIS.Migrations
                     b.Navigation("ElektronskiKarton");
                 });
 
+            modelBuilder.Entity("OCULIS.Models.Reklamacija", b =>
+                {
+                    b.HasOne("OCULIS.Models.ElektronskiKarton", "ElektronskiKarton")
+                        .WithMany("Reklamacije")
+                        .HasForeignKey("IdElektronskiKarton");
+
+                    b.HasOne("OCULIS.Models.Korisnik", "Korisnik")
+                        .WithMany()
+                        .HasForeignKey("IdKorisnik")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("OCULIS.Models.Narudzba", "Narudzba")
+                        .WithMany("Reklamacije")
+                        .HasForeignKey("IdNarudzba");
+
+                    b.Navigation("ElektronskiKarton");
+
+                    b.Navigation("Korisnik");
+
+                    b.Navigation("Narudzba");
+                });
+
             modelBuilder.Entity("OCULIS.Models.StavkaKorpe", b =>
                 {
                     b.HasOne("OCULIS.Models.Korpa", "Korpa")
-                        .WithMany()
+                        .WithMany("Stavke")
                         .HasForeignKey("IdKorpa")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -673,23 +871,63 @@ namespace OCULIS.Migrations
                     b.Navigation("Proizvod");
                 });
 
+            modelBuilder.Entity("OCULIS.Models.StavkaNarudzbe", b =>
+                {
+                    b.HasOne("OCULIS.Models.Narudzba", "Narudzba")
+                        .WithMany("Stavke")
+                        .HasForeignKey("IdNarudzba")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OCULIS.Models.Proizvod", "Proizvod")
+                        .WithMany()
+                        .HasForeignKey("IdProizvod")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Narudzba");
+
+                    b.Navigation("Proizvod");
+                });
+
             modelBuilder.Entity("OCULIS.Models.TerminPregleda", b =>
                 {
                     b.HasOne("OCULIS.Models.Korisnik", "Korisnik")
                         .WithMany()
                         .HasForeignKey("IdKorisnik")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("OCULIS.Models.Poslovnica", "Poslovnica")
                         .WithMany()
                         .HasForeignKey("IdPoslovnica")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Korisnik");
 
                     b.Navigation("Poslovnica");
+                });
+
+            modelBuilder.Entity("OCULIS.Models.ElektronskiKarton", b =>
+                {
+                    b.Navigation("Pregledi");
+
+                    b.Navigation("Reklamacije");
+                });
+
+            modelBuilder.Entity("OCULIS.Models.Korpa", b =>
+                {
+                    b.Navigation("Stavke");
+                });
+
+            modelBuilder.Entity("OCULIS.Models.Narudzba", b =>
+                {
+                    b.Navigation("Placanja");
+
+                    b.Navigation("Reklamacije");
+
+                    b.Navigation("Stavke");
                 });
 #pragma warning restore 612, 618
         }

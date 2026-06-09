@@ -5,17 +5,25 @@ namespace OCULIS.Models
 {
     public class PregledVida
     {
-        public PregledVida() { }
-
         [Key]
         public int Id { get; set; }
-        public DateTime DatumPregleda { get; set; }
-        public double DioptrijaLijevo { get; set; }
-        public double DioptrijaDesno { get; set; }
-        public string Preporuka { get; set; }
 
-        [ForeignKey("ElektronskiKarton")]
+        [Display(Name = "Datum pregleda")]
+        public DateTime DatumPregleda { get; set; }
+
+        [Display(Name = "Dioptrija lijevo")]
+        public double DioptrijaLijevo { get; set; }
+
+        [Display(Name = "Dioptrija desno")]
+        public double DioptrijaDesno { get; set; }
+
+        [Required]
+        [StringLength(500)]
+        [Display(Name = "Preporuka")]
+        public string Preporuka { get; set; } = string.Empty;
+
+        [ForeignKey(nameof(ElektronskiKarton))]
         public int IdElektronskiKarton { get; set; }
-        public ElektronskiKarton ElektronskiKarton { get; set; }
+        public ElektronskiKarton ElektronskiKarton { get; set; } = null!;
     }
 }
