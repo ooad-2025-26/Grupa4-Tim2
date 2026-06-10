@@ -6,6 +6,7 @@ using OCULIS.Data;
 using OCULIS.Data.Repositories;
 using OCULIS.Models;
 using OCULIS.Services.Email;
+using OCULIS.Services.Identity;
 using OCULIS.Services.Obavijest;
 using OCULIS.Services.Placanje;
 using OCULIS.Services.Popust;
@@ -31,6 +32,7 @@ builder.Services.AddDefaultIdentity<Korisnik>(options =>
     options.Password.RequiredLength = 6;
 })
 .AddRoles<IdentityRole>()
+.AddErrorDescriber<BosanskiIdentityErrorDescriber>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

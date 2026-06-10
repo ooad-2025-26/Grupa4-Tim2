@@ -76,23 +76,26 @@ namespace OCULIS.Areas.Identity.Pages.Account
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required]
-            [EmailAddress]
-            [Display(Name = "Email")]
+            [Required(ErrorMessage = "Polje {0} je obavezno.")]
+            [EmailAddress(ErrorMessage = "Unesite ispravnu e-mail adresu.")]
+            [Display(Name = "E-mail")]
             public string Email { get; set; }
-            [Required]
+
+            [Required(ErrorMessage = "Polje {0} je obavezno.")]
+            [Display(Name = "Ime")]
             public string Ime { get; set; }
 
-            [Required]
+            [Required(ErrorMessage = "Polje {0} je obavezno.")]
+            [Display(Name = "Prezime")]
             public string Prezime { get; set; }
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required]
-            [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+            [Required(ErrorMessage = "Polje {0} je obavezno.")]
+            [StringLength(100, ErrorMessage = "Polje {0} mora imati najmanje {2}, a najviše {1} znakova.", MinimumLength = 6)]
             [DataType(DataType.Password)]
-            [Display(Name = "Password")]
+            [Display(Name = "Lozinka")]
             public string Password { get; set; }
 
             /// <summary>
@@ -100,8 +103,8 @@ namespace OCULIS.Areas.Identity.Pages.Account
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
             [DataType(DataType.Password)]
-            [Display(Name = "Confirm password")]
-            [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+            [Display(Name = "Potvrdi lozinku")]
+            [Compare("Password", ErrorMessage = "Lozinka i potvrda lozinke se ne podudaraju.")]
             public string ConfirmPassword { get; set; }
         }
 
