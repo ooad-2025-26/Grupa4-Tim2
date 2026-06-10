@@ -63,7 +63,7 @@ namespace OCULIS.Areas.Identity.Pages.Account.Manage
             }
 
             _logger.LogInformation("User with ID '{UserId}' has disabled 2fa.", _userManager.GetUserId(User));
-            StatusMessage = "2fa has been disabled. You can reenable 2fa when you setup an authenticator app";
+            StatusMessage = "2FA je onemogućen. Možete ga ponovo omogućiti kada podesite aplikaciju za autentifikaciju.";
             return RedirectToPage("./TwoFactorAuthentication");
         }
     }
