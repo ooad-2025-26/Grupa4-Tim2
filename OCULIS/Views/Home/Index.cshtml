@@ -1,57 +1,152 @@
 ﻿@{
     ViewData["Title"] = "Početna";
     var proizvodi = ViewBag.IstaknutiProizvodi as IEnumerable<OCULIS.Models.Proizvod>;
+
+    string SlikaZaProizvod(OCULIS.Models.Proizvod p)
+    {
+        var naziv = (p.Naziv ?? "").ToLower();
+        var proizvodjac = (p.Proizvodjac ?? "").ToLower();
+        var kategorija = p.Kategorija.ToString();
+
+        if (kategorija == "KontaktnaSociva")
+        {
+            return "/images/products/contact-lenses.png";
+        }
+
+        if (kategorija == "DodatnaOprema")
+        {
+            return "/images/products/cleaning-kit.png";
+        }
+        if (kategorija == "SuncaneNaocale")
+        {
+            if (naziv.Contains("ray") || naziv.Contains("aviator") || proizvodjac.Contains("ray"))
+                return "/images/products/product5.png";
+
+            if (naziv.Contains("oakley") || naziv.Contains("holbrook") || proizvodjac.Contains("oakley"))
+                return "/images/products/product3.png";
+
+            return "/images/products/product3.png";
+        }
+        if (kategorija == "DioptrijskeNaocale")
+        {
+            if (naziv.Contains("vogue") || proizvodjac.Contains("vogue"))
+                return "/images/products/product4.png";
+
+            if (naziv.Contains("essilor") || naziv.Contains("varilux") || proizvodjac.Contains("essilor"))
+                return "/images/products/product2.png";
+
+            return "/images/products/product1.png";
+        }
+
+        return "/images/products/product1.png";
+    }
 }
 
-<div class="hero-section text-center">
-    <h1 class="display-5 fw-bold mb-3"><i class="fa-solid fa-glasses me-2"></i>OCULIS Optika</h1>
-    <p class="lead mb-4">Pregled proizvoda, online kupovina, zakazivanje pregleda vida i elektronski karton — sve na jednom mjestu.</p>
-    <div class="d-flex gap-2 justify-content-center flex-wrap">
-        <a asp-controller="Proizvod" asp-action="Index" class="btn btn-light btn-lg">Pregledaj proizvode</a>
-        <a asp-controller="Poslovnica" asp-action="Index" class="btn btn-outline-light btn-lg">Pronađi poslovnicu</a>
-        @if (!User.Identity?.IsAuthenticated ?? true)
-        {
-            <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-oculis btn-lg">Registruj se</a>
-        }
+<section class="luxury-hero">
+    <div class="luxury-hero-image">
+        <img src="/images/hero/hero-luxury.png" alt="Luxury naočale" />
     </div>
-</div>
+
+    <div class="luxury-hero-content">
+        <span class="luxury-hero-note">SINCE 1985</span>
+
+        <h1 class="luxury-brand-title">OCULIS</h1>
+
+        <p class="luxury-hero-subtext">
+            Ekskluzivna kolekcija naočala vodećih svjetskih brendova.
+            Gdje se stil susreće sa savršenstvom.
+        </p>
+
+        <div class="luxury-actions">
+            <a href="/Proizvod" class="btn btn-luxury-primary">PREGLEDAJ KOLEKCIJU</a>
+
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-controller="TerminPregleda"
+                   asp-action="Zakazi"
+                   class="btn btn-luxury-secondary">
+                    ZAKAŽI PREGLED
+                </a>
+            }
+            else
+            {
+                <a asp-area="Identity"
+                   asp-page="/Account/Login"
+                   asp-route-returnUrl="@Url.Action("Zakazi", "TerminPregleda")"
+                   class="btn btn-luxury-secondary">
+                    ZAKAŽI PREGLED
+                </a>
+            }
+        </div>
+    </div>
+</section>
 
 <div class="row g-4 mb-5">
     <div class="col-md-4">
-        <div class="stat-card text-center">
-            <i class="fa-solid fa-box fa-2x text-primary mb-2"></i>
-            <h3>@ViewBag.UkupnoProizvoda</h3>
-            <p class="text-muted mb-0">Proizvoda u ponudi</p>
+        <div class="luxury-stat-card">
+            <div class="luxury-stat-icon">
+                <i class="fa-solid fa-glasses"></i>
+            </div>
+            <div>
+                <h3>@ViewBag.UkupnoProizvoda</h3>
+                <p>Proizvoda u ponudi</p>
+            </div>
         </div>
     </div>
+
     <div class="col-md-4">
-        <div class="stat-card text-center">
-            <i class="fa-solid fa-store fa-2x text-primary mb-2"></i>
-            <h3>@ViewBag.UkupnoPoslovnica</h3>
-            <p class="text-muted mb-0">Poslovnica</p>
+        <div class="luxury-stat-card">
+            <div class="luxury-stat-icon">
+                <i class="fa-solid fa-store"></i>
+            </div>
+            <div>
+                <h3>@ViewBag.UkupnoPoslovnica</h3>
+                <p>Poslovnice</p>
+            </div>
         </div>
     </div>
+
     <div class="col-md-4">
-        <div class="stat-card text-center">
-            <i class="fa-solid fa-eye fa-2x text-primary mb-2"></i>
-            <h3>Online</h3>
-            <p class="text-muted mb-0">Zakazivanje pregleda</p>
+        <div class="luxury-stat-card">
+            <div class="luxury-stat-icon">
+                <i class="fa-regular fa-calendar-check"></i>
+            </div>
+            <div>
+                <h3>Online</h3>
+                <p>Rezervacija pregleda</p>
+            </div>
         </div>
     </div>
 </div>
 
-<h2 class="page-title">Istaknuti proizvodi</h2>
+<div class="luxury-section-header">
+    <h2>Izdvojeni proizvodi</h2>
+    <a href="/Proizvod">
+        Pogledaj sve proizvode <i class="fa-solid fa-arrow-right ms-2"></i>
+    </a>
+</div>
+
 <div class="row g-4">
     @foreach (var p in proizvodi ?? Enumerable.Empty<OCULIS.Models.Proizvod>())
     {
+        var slika = SlikaZaProizvod(p);
+
         <div class="col-md-6 col-lg-3">
-            <div class="product-card">
-                <div class="card-img-top"><i class="fa-solid fa-glasses"></i></div>
-                <div class="card-body">
-                    <h5 class="card-title">@p.Naziv</h5>
-                    <p class="text-muted small">@p.Proizvodjac</p>
-                    <p class="fw-bold text-primary">@p.Cijena.ToString("F2") KM</p>
-                    <a asp-controller="Proizvod" asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-oculis">Detalji</a>
+            <div class="luxury-product-card">
+                <div class="luxury-product-image">
+                    <img src="@slika" alt="@p.Naziv" />
+                </div>
+
+                <div class="luxury-product-body">
+                    <h5>@p.Naziv</h5>
+                    <p>@p.Proizvodjac</p>
+
+                    <div class="luxury-product-footer">
+                        <span>@p.Cijena.ToString("F2") KM</span>
+                        <a href="/Proizvod/Details/@p.Id">
+                            Detalji
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

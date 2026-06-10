@@ -1,59 +1,118 @@
 @model IEnumerable<OCULIS.Models.Poslovnica>
+
 @{
     ViewData["Title"] = "Poslovnice";
-    var apiKey = ViewBag.GoogleMapsApiKey as string ?? "";
+    var apiKey = ViewBag.GoogleMapsApiKey as string;
 }
 
-<h1 class="page-title"><i class="fa-solid fa-map-location-dot me-2"></i>Poslovnice</h1>
+<section class="branches-header">
+    <span class="catalog-label">OCULIS MREŽA</span>
+    <h1 class="branches-title">
+        <i class="fa-solid fa-map-location-dot me-2"></i>Poslovnice
+    </h1>
+    <p class="branches-subtitle">
+        Pronađite najbližu OCULIS poslovnicu i pregledajte osnovne informacije, lokaciju i radno vrijeme.
+    </p>
+</section>
 
-<div id="map" class="mb-4"></div>
+<div class="branches-top-layout">
+    <div class="branches-map-card branches-map-full">
+        @if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            <div class="alert alert-warning mb-3">
+                Google Maps API ključ nije konfigurisan. Dodajte ga u appsettings.json pod
+                <strong>GoogleMaps:ApiKey</strong>.
+            </div>
 
-<div class="row g-4">
-@foreach (var p in Model)
-{
-    <div class="col-md-4">
-        <div class="filter-card h-100">
-            <h5><i class="fa-solid fa-store me-2 text-primary"></i>@p.Naziv</h5>
-            <p><i class="fa-solid fa-location-dot me-1"></i>@p.Adresa</p>
-            <p><i class="fa-solid fa-phone me-1"></i>@p.Telefon</p>
-            <p><i class="fa-solid fa-clock me-1"></i>@p.RadnoVrijeme</p>
-            <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-oculis">Detalji i navigacija</a>
-        </div>
+            <div class="map-placeholder">
+                <i class="fa-solid fa-map-location-dot"></i>
+                <h4>Mapa trenutno nije dostupna</h4>
+                <p>Kada dodaš Google Maps API key, ovdje će se prikazati mapa poslovnica.</p>
+            </div>
+        }
+        else
+        {
+            <div id="map"></div>
+        }
     </div>
-}
 </div>
 
-@if (User.IsInRole("Administrator"))
-{
-    <a asp-action="Create" class="btn btn-outline-primary mt-3">Nova poslovnica</a>
-}
+<div class="branches-grid">
+    @foreach (var p in Model)
+    {
+        <div class="branch-card"
+             data-naziv="@p.Naziv"
+             data-adresa="@p.Adresa"
+             data-lat="@p.Latitude"
+             data-lng="@p.Longitude">
+
+            <h4>@p.Naziv</h4>
+
+            <div class="branch-meta">
+                <p><i class="fa-solid fa-location-dot"></i> @p.Adresa</p>
+                <p><i class="fa-solid fa-phone"></i> @p.Telefon</p>
+                <p><i class="fa-solid fa-clock"></i> @p.RadnoVrijeme</p>
+            </div>
+
+            <a asp-action="Details" asp-route-id="@p.Id" class="btn branch-show-btn">
+                Prikaži
+            </a>
+        </div>
+    }
+</div>
 
 @section Scripts {
-<script>
-    const poslovnice = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Select(p => new { p.Id, p.Naziv, p.Adresa, p.Latitude, p.Longitude })));
-    function initMap() {
-        if (!poslovnice.length) return;
-        const center = { lat: poslovnice[0].Latitude || 43.85, lng: poslovnice[0].Longitude || 18.41 };
-        const map = new google.maps.Map(document.getElementById('map'), { zoom: 8, center });
-        poslovnice.forEach(p => {
-            if (p.Latitude && p.Longitude) {
-                new google.maps.Marker({
-                    position: { lat: p.Latitude, lng: p.Longitude },
-                    map,
-                    title: p.Naziv
-                });
+    @if (!string.IsNullOrWhiteSpace(apiKey))
+    {
+        <script src="https://maps.googleapis.com/maps/api/js?key=@apiKey"></script>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+            const mapElement = document.getElementById("map");
+
+            if (!mapElement || typeof google === "undefined") {
+            return;
             }
-        });
+
+            const defaultCenter = { lat: 43.8563, lng: 18.4131 };
+
+            const map = new google.maps.Map(mapElement, {
+            zoom: 11,
+            center: defaultCenter,
+            styles: []
+            });
+
+            const infoWindow = new google.maps.InfoWindow();
+
+            document.querySelectorAll(".branch-card").forEach(card => {
+            const naziv = card.dataset.naziv;
+            const adresa = card.dataset.adresa;
+            const lat = parseFloat(card.dataset.lat);
+            const lng = parseFloat(card.dataset.lng);
+
+            if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+            const marker = new google.maps.Marker({
+            position: { lat, lng },
+            map: map,
+            title: naziv
+            });
+
+            marker.addListener("click", () => {
+            map.panTo({ lat, lng });
+            map.setZoom(13);
+
+            infoWindow.setContent(`
+            <div style="padding:6px 8px;">
+            <strong>${naziv}</strong><br/>
+            <span>${adresa}</span>
+            </div>
+            `);
+
+            infoWindow.open(map, marker);
+            });
+            }
+            });
+            });
+        </script>
     }
-</script>
-@if (!string.IsNullOrEmpty(apiKey))
-{
-    <script src="https://maps.googleapis.com/maps/api/js?key=@apiKey&callback=initMap" async defer></script>
-}
-else
-{
-    <script>
-        document.getElementById('map').innerHTML = '<div class="alert alert-warning m-3">Google Maps API ključ nije konfigurisan. Dodajte ga u appsettings.json pod GoogleMaps:ApiKey. Koordinate poslovnica su prikazane u karticama ispod.</div>';
-    </script>
-}
 }

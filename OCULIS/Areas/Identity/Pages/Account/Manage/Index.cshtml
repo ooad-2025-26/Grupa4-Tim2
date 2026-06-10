@@ -1,29 +1,51 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Profile";
+    ViewData["Title"] = "Moj profil";
     ViewData["ActivePage"] = ManageNavPages.Index;
 }
 
-<h3>@ViewData["Title"]</h3>
-<partial name="_StatusMessage" for="StatusMessage" />
-<div class="row">
-    <div class="col-md-6">
-        <form id="profile-form" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="form-floating mb-3">
-                <input asp-for="Username" class="form-control" placeholder="Please choose your username." disabled />
-                <label asp-for="Username" class="form-label"></label>
-            </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number."/>
-                <label asp-for="Input.PhoneNumber" class="form-label"></label>
-                <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
-            </div>
-            <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
-        </form>
+<section class="account-page">
+    <div class="account-header">
+        <span>OCULIS PROFIL</span>
+        <h1>Moj profil</h1>
+        <p>Uredite osnovne podatke svog korisničkog računa.</p>
     </div>
-</div>
+
+    <div class="account-layout">
+        <aside class="account-sidebar">
+            <partial name="_ManageNav" />
+        </aside>
+
+        <div class="account-card">
+            <h2>Podaci o računu</h2>
+            <p class="account-card-text">
+                Ovdje možete pregledati korisničko ime i promijeniti broj telefona.
+            </p>
+
+            <partial name="_StatusMessage" for="StatusMessage" />
+
+            <form id="profile-form" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+                <div class="account-form-group">
+                    <label asp-for="Username">Korisničko ime</label>
+                    <input asp-for="Username" class="form-control account-input" disabled />
+                </div>
+
+                <div class="account-form-group">
+                    <label asp-for="Input.PhoneNumber">Broj telefona</label>
+                    <input asp-for="Input.PhoneNumber" class="form-control account-input" placeholder="Unesite broj telefona" />
+                    <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+                </div>
+
+                <button id="update-profile-button" type="submit" class="btn account-save-btn">
+                    Sačuvaj promjene
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

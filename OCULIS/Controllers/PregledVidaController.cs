@@ -29,27 +29,57 @@ namespace OCULIS.Controllers
 
         public async Task<IActionResult> Create(int? kartonId)
         {
-            ViewData["IdElektronskiKarton"] = new SelectList(
-                await _context.ElektronskiKarton.Include(e => e.Korisnik).ToListAsync(),
-                "Id", "Napomena", kartonId);
-            return View();
+            await PopuniKartoneAsync(kartonId);
+
+            var pregled = new PregledVida
+            {
+                DatumPregleda = DateTime.Today,
+                IdElektronskiKarton = kartonId ?? 0
+            };
+
+            return View(pregled);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("DatumPregleda,DioptrijaLijevo,DioptrijaDesno,Preporuka,IdElektronskiKarton")] PregledVida pregled)
         {
-            if (ModelState.IsValid)
+            ModelState.Remove(nameof(PregledVida.ElektronskiKarton));
+
+            if (pregled.IdElektronskiKarton == 0)
             {
-                _context.Add(pregled);
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Pregled vida evidentiran.";
-                return RedirectToAction("Details", "ElektronskiKarton", new { id = pregled.IdElektronskiKarton });
+                ModelState.AddModelError(nameof(PregledVida.IdElektronskiKarton), "Molimo odaberite elektronski karton.");
             }
 
-            ViewData["IdElektronskiKarton"] = new SelectList(
-                await _context.ElektronskiKarton.ToListAsync(), "Id", "Napomena", pregled.IdElektronskiKarton);
-            return View(pregled);
+            if (!ModelState.IsValid)
+            {
+                await PopuniKartoneAsync(pregled.IdElektronskiKarton);
+                return View(pregled);
+            }
+
+            _context.PregledVida.Add(pregled);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Pregled vida je uspješno evidentiran.";
+
+            return RedirectToAction("Details", "ElektronskiKarton", new { id = pregled.IdElektronskiKarton });
+        }
+
+        private async Task PopuniKartoneAsync(int? odabraniKarton = null)
+        {
+            var kartoni = await _context.ElektronskiKarton
+                .Include(e => e.Korisnik)
+                .OrderBy(e => e.Id)
+                .Select(e => new
+                {
+                    e.Id,
+                    Naziv = e.Korisnik != null
+                        ? e.Korisnik.Ime + " " + e.Korisnik.Prezime + " - Karton #" + e.Id
+                        : "Karton #" + e.Id
+                })
+                .ToListAsync();
+
+            ViewData["IdElektronskiKarton"] = new SelectList(kartoni, "Id", "Naziv", odabraniKarton);
         }
     }
-}
+} 
