@@ -6,22 +6,9 @@
     ViewData["ActivePage"] = ManageNavPages.Index;
 }
 
-<section class="account-page">
-    <div class="account-header">
-        <span>OCULIS PROFIL</span>
-        <h1>Moj profil</h1>
-        <p>Uredite osnovne podatke svog korisničkog računa.</p>
-    </div>
-
-    <div class="account-layout">
-        <aside class="account-sidebar">
-            <partial name="_ManageNav" />
-        </aside>
-
-        <div class="account-card">
             <h2>Podaci o računu</h2>
             <p class="account-card-text">
-                Ovdje možete pregledati korisničko ime i promijeniti broj telefona.
+                Pregledajte korisničko ime i promijenite broj telefona.
             </p>
 
             <partial name="_StatusMessage" for="StatusMessage" />
@@ -44,9 +31,6 @@
                     Sačuvaj promjene
                 </button>
             </form>
-        </div>
-    </div>
-</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OCULIS.Models;
-
 namespace OCULIS.Areas.Identity.Pages.Account.Manage
 {
     public class IndexModel : PageModel
@@ -57,12 +56,18 @@ namespace OCULIS.Areas.Identity.Pages.Account.Manage
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Phone(ErrorMessage = "Unesite ispravan broj telefona.")]
+            [Required(ErrorMessage = "Broj telefona je obavezan.")]
+            [RegularExpression(
+     @"^(\+387|387|0)6[0-9]{7,8}$",
+     ErrorMessage = "Unesite ispravan broj mobilnog telefona.")]
             [Display(Name = "Broj telefona")]
-            public string PhoneNumber { get; set; }
+            public string PhoneNumber
+            {
+                get; set;
+            }
         }
 
-        private async Task LoadAsync(Korisnik user)
+            private async Task LoadAsync(Korisnik user)
         {
             var userName = await _userManager.GetUserNameAsync(user);
             var phoneNumber = await _userManager.GetPhoneNumberAsync(user);

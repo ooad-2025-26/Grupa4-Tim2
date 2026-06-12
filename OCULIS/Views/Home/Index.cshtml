@@ -80,44 +80,112 @@
         </div>
     </div>
 </section>
-
-<div class="row g-4 mb-5">
-    <div class="col-md-4">
-        <div class="luxury-stat-card">
-            <div class="luxury-stat-icon">
-                <i class="fa-solid fa-glasses"></i>
-            </div>
-            <div>
-                <h3>@ViewBag.UkupnoProizvoda</h3>
-                <p>Proizvoda u ponudi</p>
-            </div>
+<section class="oculis-features">
+    <div class="oculis-feature">
+        <div class="oculis-feature-icon">
+            <i class="fa-regular fa-eye"></i>
         </div>
+
+        <h3>Profesionalni pregled vida</h3>
+
+        <p>
+            Najsavremenija oprema i stručno osoblje za preciznu dijagnostiku.
+        </p>
     </div>
 
-    <div class="col-md-4">
-        <div class="luxury-stat-card">
-            <div class="luxury-stat-icon">
-                <i class="fa-solid fa-store"></i>
-            </div>
-            <div>
-                <h3>@ViewBag.UkupnoPoslovnica</h3>
-                <p>Poslovnice</p>
-            </div>
+    <div class="oculis-feature">
+        <div class="oculis-feature-icon">
+            <i class="fa-solid fa-award"></i>
         </div>
+
+        <h3>Premium brendovi</h3>
+
+        <p>
+            Ekskluzivna kolekcija vodećih svjetskih proizvođača naočala.
+        </p>
     </div>
 
-    <div class="col-md-4">
-        <div class="luxury-stat-card">
-            <div class="luxury-stat-icon">
-                <i class="fa-regular fa-calendar-check"></i>
-            </div>
-            <div>
-                <h3>Online</h3>
-                <p>Rezervacija pregleda</p>
-            </div>
+    <div class="oculis-feature">
+        <div class="oculis-feature-icon">
+            <i class="fa-solid fa-bag-shopping"></i>
         </div>
+
+        <h3>Online kupovina</h3>
+
+        <p>
+            Jednostavna narudžba i brza isporuka direktno na vašu adresu.
+        </p>
     </div>
-</div>
+</section>
+<section class="exam-cta-section">
+    <div class="exam-cta-content">
+        <span>Besplatno za naše korisnike</span>
+
+        <h2>Zakažite pregled vida</h2>
+
+        <p>
+            Brzo i jednostavno rezervišite termin pregleda vida u najbližoj OCULIS poslovnici.
+            Odaberite datum, vrijeme i poslovnicu koja vam najviše odgovara.
+        </p>
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a asp-controller="TerminPregleda" asp-action="Zakazi" class="exam-cta-btn">
+                Zakaži besplatan pregled
+            </a>
+        }
+        else
+        {
+            <a asp-area="Identity"
+                   asp-page="/Account/Login"
+                   asp-route-returnUrl="@Url.Action("Zakazi", "TerminPregleda")"
+                   class="exam-cta-btn">
+                Zakaži besplatan pregled
+            </a>
+        }
+    </div>
+
+    <div class="exam-cta-icon">
+        <i class="fa-regular fa-eye"></i>
+    </div>
+</section>
+
+@{
+    var akcije = ViewBag.AktivneAkcije as IEnumerable<OCULIS.Models.Akcija>;
+}
+
+@if (akcije != null && akcije.Any())
+{
+    <section class="discount-banner-section">
+        <div class="discount-header">
+            <h2>Trenutni popusti</h2>
+        </div>
+
+        <div class="discount-banner-grid">
+            @foreach (var akcija in akcije)
+            {
+                <div class="discount-banner-card">
+                    <span class="discount-percent">-@akcija.PopustPostotak%</span>
+
+                    <h3>@akcija.Naziv</h3>
+
+                    <p>
+                        Važi do @akcija.DatumZavrsetka.ToString("dd.MM.yyyy")
+                    </p>
+
+                    <strong>
+                        @(akcija.Proizvod != null ? akcija.Proizvod.Naziv : "Odabrani proizvodi")
+                    </strong>
+
+                    <a asp-controller="Proizvod" asp-action="Index">
+                        Pogledaj kolekciju
+                    </a>
+                </div>
+            }
+        </div>
+    </section>
+}
+
 
 <div class="luxury-section-header">
     <h2>Izdvojeni proizvodi</h2>
@@ -152,3 +220,4 @@
         </div>
     }
 </div>
+

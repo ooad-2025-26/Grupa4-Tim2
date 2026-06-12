@@ -4,24 +4,30 @@
     ViewData["Title"] = "Lični podaci";
     ViewData["ActivePage"] = ManageNavPages.PersonalData;
 }
+<h2>Lični podaci</h2>
 
-<h3>@ViewData["Title"]</h3>
+<p class="account-card-text">
+    Ovdje možete preuzeti ili trajno obrisati podatke povezane sa vašim računom.
+</p>
 
-<div class="row">
-    <div class="col-md-6">
-        <p>Vaš račun sadrži lične podatke koje ste nam dostavili. Ova stranica vam omogućava da preuzmete ili obrišete te podatke.</p>
-        <p>
-            <strong>Brisanjem ovih podataka trajno ćete ukloniti svoj račun i to se ne može povratiti.</strong>
-        </p>
-        <form id="download-data" asp-page="DownloadPersonalData" method="post">
-            <button class="btn btn-primary" type="submit">Preuzmi</button>
-        </form>
-        <p>
-            <a id="delete" asp-page="DeletePersonalData" class="btn btn-danger">Obriši</a>
-        </p>
-    </div>
+<div class="alert alert-warning mt-3 mb-4">
+    <strong>Upozorenje:</strong>
+    Brisanjem ovih podataka trajno ćete ukloniti svoj račun i ovu radnju nije moguće poništiti.
 </div>
 
+<div class="d-flex gap-3 mt-4 flex-wrap">
+    <form id="download-data" asp-page="DownloadPersonalData" method="post">
+        <button class="btn account-save-btn" type="submit">
+            Preuzmi podatke
+        </button>
+    </form>
+
+    <a id="delete"
+           asp-page="DeletePersonalData"
+           class="btn btn-danger account-delete-btn account-action-btn">
+        Obriši račun
+    </a>
+</div>
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

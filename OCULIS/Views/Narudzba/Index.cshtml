@@ -1,25 +1,43 @@
 @model IEnumerable<OCULIS.Models.Narudzba>
-@{ ViewData["Title"] = "Narudžbe"; }
 
-<h1 class="page-title"><i class="fa-solid fa-receipt me-2"></i>Narudžbe</h1>
+@{
+    ViewData["Title"] = "Narudžbe";
+}
 
-<div class="table-oculis">
-    <table class="table table-hover mb-0">
-        <thead class="table-light">
-            <tr><th>#</th><th>Datum</th><th>Korisnik</th><th>Status</th><th>Ukupno</th><th></th></tr>
-        </thead>
-        <tbody>
+<section class="orders-page">
+    <div class="orders-header">
+        <span>OCULIS KUPOVINA</span>
+        <h1><i class="fa-solid fa-receipt me-2"></i>Narudžbe</h1>
+    </div>
+
+    <div class="orders-list">
         @foreach (var n in Model)
         {
-            <tr>
-                <td>@n.Id</td>
-                <td>@n.DatumNarudzbe.ToString("dd.MM.yyyy HH:mm")</td>
-                <td>@n.Korisnik?.Ime @n.Korisnik?.Prezime</td>
-                <td><span class="badge bg-info">@n.Status</span></td>
-                <td class="fw-bold">@n.UkupnaCijena.ToString("F2") KM</td>
-                <td><a asp-action="Details" asp-route-id="@n.Id" class="btn btn-sm btn-outline-primary">Detalji</a></td>
-            </tr>
+            <div class="order-card">
+                <div>
+                    <h4>Narudžba</h4>
+                    <p>@n.DatumNarudzbe.ToString("dd.MM.yyyy HH:mm")</p>
+                </div>
+
+                <div>
+                    <span>Korisnik</span>
+                    <strong>@n.Korisnik?.Ime @n.Korisnik?.Prezime</strong>
+                </div>
+
+                <div>
+                    <span>Status</span>
+                    <span class="order-status">@n.Status</span>
+                </div>
+
+                <div class="order-price">
+                    <span>Ukupno</span>
+                    <strong>@n.UkupnaCijena.ToString("F2") KM</strong>
+                </div>
+
+                <a asp-action="Details" asp-route-id="@n.Id" class="order-details-btn">
+                    Detalji
+                </a>
+            </div>
         }
-        </tbody>
-    </table>
-</div>
+    </div>
+</section>

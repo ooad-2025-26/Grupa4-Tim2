@@ -23,9 +23,24 @@ namespace OCULIS.Controllers
 
         public async Task<IActionResult> Index()
         {
+            var danas = DateTime.Today;
+
             ViewBag.UkupnoProizvoda = await _context.Proizvod.CountAsync();
             ViewBag.UkupnoPoslovnica = await _context.Poslovnica.CountAsync();
-            ViewBag.IstaknutiProizvodi = await _context.Proizvod.Take(4).ToListAsync();
+
+            ViewBag.IstaknutiProizvodi = await _context.Proizvod
+                .Take(4)
+                .ToListAsync();
+
+            ViewBag.AktivneAkcije = await _context.Akcija
+                .Include(a => a.Proizvod)
+                .Where(a => a.Aktivna &&
+                            a.DatumPocetka <= danas &&
+                            a.DatumZavrsetka >= danas)
+                .OrderByDescending(a => a.PopustPostotak)
+                .Take(3)
+                .ToListAsync();
+
             return View();
         }
 

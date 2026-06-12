@@ -41,50 +41,22 @@
                                     Zakaži pregled
                                 </a>
                             </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Korpa" asp-action="Index">
-                                    <i class="fa-solid fa-cart-shopping"></i> Korpa
-                                </a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Narudzba" asp-action="Index">
-                                    Narudžbe
-                                </a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="ElektronskiKarton" asp-action="MojKarton">
-                                    Moj karton
-                                </a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Reklamacija" asp-action="Index">
-                                    Reklamacije
-                                </a>
-                            </li>
                         }
 
                         @if (User.IsInRole("Zaposlenik"))
                         {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="ElektronskiKarton" asp-action="Index">
-                                    Kartoni
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="zaposlenikDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Zaposlenik
                                 </a>
-                            </li>
 
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Placanje" asp-action="Index">
-                                    Plaćanja
-                                </a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Reklamacija" asp-action="Index">
-                                    Reklamacije
-                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="zaposlenikDropdown">
+                                    <li><a class="dropdown-item" asp-controller="TerminPregleda" asp-action="Index">Termini</a></li>
+                                    <li><a class="dropdown-item" asp-controller="ElektronskiKarton" asp-action="Index">Kartoni</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Narudzba" asp-action="Index">Narudžbe</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Placanje" asp-action="Index">Plaćanja</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Obavijest" asp-action="Index">Obavijesti</a></li>
+                                </ul>
                             </li>
                         }
 
@@ -96,68 +68,95 @@
                                 </a>
                             </li>
 
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="ElektronskiKarton" asp-action="Index">
-                                    Kartoni
-                                </a>
-                            </li>
-
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     Administracija
                                 </a>
 
-                                <ul class="dropdown-menu">
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Korisnik" asp-action="Index">
-                                            Korisnici
-                                        </a>
-                                    </li>
-
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Akcija" asp-action="Index">
-                                            Akcije i popusti
-                                        </a>
-                                    </li>
-
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Obavijest" asp-action="Index">
-                                            Obavijesti
-                                        </a>
-                                    </li>
-
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Reklamacija" asp-action="Index">
-                                            Reklamacije
-                                        </a>
-                                    </li>
-
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Placanje" asp-action="Index">
-                                            Plaćanja
-                                        </a>
-                                    </li>
+                                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                    <li><a class="dropdown-item" asp-controller="Korisnik" asp-action="Index">Korisnici</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Proizvod" asp-action="Index">Upravljanje proizvodima</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Akcija" asp-action="Index">Akcije i popusti</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Obavijest" asp-action="Index">Obavijesti</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Placanje" asp-action="Index">Plaćanja</a></li>
                                 </ul>
-                            </li>
-                        }
-
-                        @if (User.Identity?.IsAuthenticated == true && !User.IsInRole("Administrator"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Obavijest" asp-action="Index">
-                                    Obavijesti
-                                </a>
                             </li>
                         }
                     </ul>
 
-                    <partial name="_LoginPartial" />
+                    <ul class="navbar-nav ms-auto align-items-lg-center">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            @if (User.IsInRole("Kupac"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Korpa" asp-action="Index">
+                                        <i class="fa-solid fa-cart-shopping"></i> Korpa
+                                    </a>
+                                </li>
+                            }
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle account-dropdown"
+                                       href="#"
+                                       id="mojRacunDropdown"
+                                       role="button"
+                                       data-bs-toggle="dropdown"
+                                       aria-expanded="false">
+                                    <i class="fa-solid fa-user me-1"></i>
+                                    Moj račun
+                                </a>
+
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mojRacunDropdown">
+                                    <li>
+                                        <a class="dropdown-item"
+                                               asp-area="Identity"
+                                               asp-page="/Account/Manage/Index">
+                                            Profil
+                                        </a>
+                                    </li>
+
+                                    @if (User.IsInRole("Kupac"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="Narudzba" asp-action="Index">Moje narudžbe</a></li>
+                                        <li><a class="dropdown-item" asp-controller="ElektronskiKarton" asp-action="MojKarton">Moj karton</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Obavijest" asp-action="Index">Obavijesti</a></li>
+                                    }
+
+                                    <li><hr class="dropdown-divider" /></li>
+
+                                    <li>
+                                        <form asp-area="Identity" asp-page="/Account/Logout"
+                                              asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                                            <button type="submit" class="dropdown-item">
+                                                Odjava
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">
+                                    Prijava
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">
+                                    Registracija
+                                </a>
+                            </li>
+                        }
+                    </ul>
                 </div>
             </div>
         </nav>
     </header>
 
-    <main class="container py-4">
+    <main class="container py-4" style="flex:1;">
         <partial name="_Alerts" />
         @RenderBody()
     </main>

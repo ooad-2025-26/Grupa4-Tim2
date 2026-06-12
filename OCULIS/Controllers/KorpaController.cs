@@ -68,8 +68,17 @@ namespace OCULIS.Controllers
             }
 
             await AzurirajUkupnuCijenuKorpeAsync(korpa.Id);
-            TempData["Success"] = $"{proizvod.Naziv} dodan u korpu.";
-            return RedirectToAction(nameof(Index));
+
+            TempData["Success"] = "Proizvod je dodan u korpu.";
+            TempData["ShowCartLink"] = true;
+            var referer = Request.Headers["Referer"].ToString();
+
+            if (!string.IsNullOrEmpty(referer))
+            {
+                return Redirect(referer);
+            }
+
+            return RedirectToAction("Index", "Proizvod");
         }
 
         [HttpPost]

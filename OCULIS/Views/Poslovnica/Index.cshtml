@@ -18,18 +18,11 @@
 <div class="branches-top-layout">
     <div class="branches-map-card branches-map-full">
         @if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            <div class="alert alert-warning mb-3">
-                Google Maps API ključ nije konfigurisan. Dodajte ga u appsettings.json pod
-                <strong>GoogleMaps:ApiKey</strong>.
-            </div>
-
-            <div class="map-placeholder">
-                <i class="fa-solid fa-map-location-dot"></i>
-                <h4>Mapa trenutno nije dostupna</h4>
-                <p>Kada dodaš Google Maps API key, ovdje će se prikazati mapa poslovnica.</p>
-            </div>
-        }
+        { 
+            <div class="map-placeholder"> 
+                <i class="fa-solid fa-map-location-dot"></i> 
+                <h4>Mapa trenutno nije dostupna</h4> 
+                </div> }
         else
         {
             <div id="map"></div>

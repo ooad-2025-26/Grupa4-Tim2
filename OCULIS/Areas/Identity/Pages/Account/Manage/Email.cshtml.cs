@@ -166,7 +166,7 @@ namespace OCULIS.Areas.Identity.Pages.Account.Manage
                 "Confirm your email",
                 $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
-            StatusMessage = "E-mail za verifikaciju je poslan. Provjerite svoj e-mail.";
+            StatusMessage = "E-mail za verifikaciju je poslan.";
             return RedirectToPage();
         }
     }
