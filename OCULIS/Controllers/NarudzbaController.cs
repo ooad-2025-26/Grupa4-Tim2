@@ -64,13 +64,13 @@ namespace OCULIS.Controllers
 
             return View(narudzba);
         }
-
         [Authorize(Roles = Uloge.Kupac)]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Kreiraj(NarudzbaCheckoutViewModel model)
         {
             var user = await _userManager.GetUserAsync(User);
+
             var korpa = await _context.Korpa
                 .Include(k => k.Stavke)
                 .ThenInclude(s => s.Proizvod)
@@ -84,6 +84,30 @@ namespace OCULIS.Controllers
 
             var popust = await _popustService.IzracunajPopustAsync(user!.Id, korpa.Id);
 
+            if (!ModelState.IsValid)
+            {
+                model.Popust = popust;
+                model.Korpa = new KorpaViewModel
+                {
+                    KorpaId = korpa.Id,
+                    UkupnaCijena = korpa.Stavke.Sum(s => s.Cijena * s.Kolicina),
+                    Popust = popust,
+                    Stavke = korpa.Stavke.Select(s => new StavkaKorpeViewModel
+                    {
+                        Id = s.Id,
+                        IdProizvod = s.IdProizvod,
+                        NazivProizvoda = s.Proizvod.Naziv,
+                        Kolicina = s.Kolicina,
+                        Cijena = s.Cijena
+                    }).ToList()
+                };
+
+                return View("~/Views/Korpa/Checkout.cshtml", model);
+            }
+
+            var punaAdresa =
+                $"{model.AdresaIsporuke}, {model.Grad}, {model.PostanskiBroj}, Tel: {model.Telefon}";
+
             var narudzba = new Narudzba
             {
                 DatumNarudzbe = DateTime.Now,
@@ -92,7 +116,7 @@ namespace OCULIS.Controllers
                 PopustPostotak = popust.PopustPostotak,
                 PopustIznos = popust.PopustIznos,
                 UkupnaCijena = popust.UkupnaCijena,
-                AdresaIsporuke = model.AdresaIsporuke,
+                AdresaIsporuke = punaAdresa,
                 IdKorisnik = user.Id,
                 IdKorpa = korpa.Id
             };
@@ -108,8 +132,11 @@ namespace OCULIS.Controllers
                 });
 
                 var proizvod = await _context.Proizvod.FindAsync(stavka.IdProizvod);
+
                 if (proizvod != null)
+                {
                     proizvod.DostupnaKolicina = Math.Max(0, proizvod.DostupnaKolicina - stavka.Kolicina);
+                }
             }
 
             _context.Narudzba.Add(narudzba);
@@ -118,12 +145,13 @@ namespace OCULIS.Controllers
 
             user.BrojNarudzbi++;
             user.LojalnostBodovi += (int)(popust.UkupnaCijena / 10);
-            await _userManager.UpdateAsync(user);
 
+            await _userManager.UpdateAsync(user);
             await _context.SaveChangesAsync();
             await _obavijestServis.PosaljiObavijestNarudzbaAsync(user.Id, narudzba.Id);
 
             TempData["Success"] = $"Narudžba #{narudzba.Id} uspješno kreirana.";
+
             return RedirectToAction(nameof(Details), new { id = narudzba.Id });
         }
 

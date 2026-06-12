@@ -1,56 +1,40 @@
 @model OCULIS.Models.Narudzba
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Podaci za narudžbu";
 }
 
-<h1>Create</h1>
+<h1>Podaci za narudžbu</h1>
 
-<h4>Narudzba</h4>
+<p>Unesite adresu na koju želite da narudžba bude isporučena.</p>
+
 <hr />
+
 <div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
+    <div class="col-md-5">
+        <form asp-action="Create" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="DatumNarudzbe" class="control-label"></label>
-                <input asp-for="DatumNarudzbe" class="form-control" />
-                <span asp-validation-for="DatumNarudzbe" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Status" class="control-label"></label>
-                <select asp-for="Status" class="form-control"></select>
-                <span asp-validation-for="Status" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="UkupnaCijena" class="control-label"></label>
-                <input asp-for="UkupnaCijena" class="form-control" />
-                <span asp-validation-for="UkupnaCijena" class="text-danger"></span>
-            </div>
-            <div class="form-group">
+
+            <div class="form-group mb-3">
                 <label asp-for="AdresaIsporuke" class="control-label"></label>
-                <input asp-for="AdresaIsporuke" class="form-control" />
+                <input asp-for="AdresaIsporuke"
+                       class="form-control"
+                       placeholder="npr. Zmaja od Bosne 8" />
                 <span asp-validation-for="AdresaIsporuke" class="text-danger"></span>
             </div>
+
             <div class="form-group">
-                <label asp-for="IdKorisnik" class="control-label"></label>
-                <select asp-for="IdKorisnik" class ="form-control" asp-items="ViewBag.IdKorisnik"></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="IdKorpa" class="control-label"></label>
-                <select asp-for="IdKorpa" class ="form-control" asp-items="ViewBag.IdKorpa"></select>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                <input type="submit" value="Potvrdi narudžbu" class="btn btn-primary" />
+                <a asp-controller="Korpa" asp-action="Index" class="btn btn-secondary">
+                    Nazad na korpu
+                </a>
             </div>
         </form>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

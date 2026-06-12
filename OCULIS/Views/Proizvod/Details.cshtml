@@ -75,7 +75,7 @@
         return "Pažljivo odabran proizvod iz OCULIS ponude.";
     }
 
-    string Slika = SlikaZaProizvod(Model);
+    string Slika = !string.IsNullOrEmpty(Model.SlikaUrl) ? Model.SlikaUrl : SlikaZaProizvod(Model);
     string Opis = OpisZaProizvod(Model);
 }
 
@@ -150,6 +150,15 @@
             <a asp-controller="Proizvod" asp-action="Index" class="btn btn-details-secondary">
                 Nazad na proizvode
             </a>
+            @if (User.Identity?.Name == "admin@oculis.ba")
+            {
+                <a asp-controller="Proizvod"
+                   asp-action="Delete"
+                   asp-route-id="@Model.Id"
+                   class="btn btn-danger">
+                    Obriši proizvod
+                </a>
+            }
         </div>
     </div>
 

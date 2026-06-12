@@ -2,7 +2,11 @@
 
 @{
     ViewData["Title"] = "Poslovnice";
-    var apiKey = ViewBag.GoogleMapsApiKey as string;
+
+    var prvaPoslovnica = Model.FirstOrDefault(p => p.Latitude != 0 && p.Longitude != 0);
+
+    var mapLat = prvaPoslovnica != null ? prvaPoslovnica.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture) : "43.8563";
+    var mapLng = prvaPoslovnica != null ? prvaPoslovnica.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture) : "18.4131";
 }
 
 <section class="branches-header">
@@ -17,16 +21,14 @@
 
 <div class="branches-top-layout">
     <div class="branches-map-card branches-map-full">
-        @if (string.IsNullOrWhiteSpace(apiKey))
-        { 
-            <div class="map-placeholder"> 
-                <i class="fa-solid fa-map-location-dot"></i> 
-                <h4>Mapa trenutno nije dostupna</h4> 
-                </div> }
-        else
-        {
-            <div id="map"></div>
-        }
+        <iframe src="https://www.google.com/maps?q=@mapLat,@mapLng&z=13&output=embed"
+                width="100%"
+                height="430"
+                style="border:0; border-radius: 22px;"
+                allowfullscreen=""
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
     </div>
 </div>
 
@@ -53,59 +55,3 @@
         </div>
     }
 </div>
-
-@section Scripts {
-    @if (!string.IsNullOrWhiteSpace(apiKey))
-    {
-        <script src="https://maps.googleapis.com/maps/api/js?key=@apiKey"></script>
-
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-            const mapElement = document.getElementById("map");
-
-            if (!mapElement || typeof google === "undefined") {
-            return;
-            }
-
-            const defaultCenter = { lat: 43.8563, lng: 18.4131 };
-
-            const map = new google.maps.Map(mapElement, {
-            zoom: 11,
-            center: defaultCenter,
-            styles: []
-            });
-
-            const infoWindow = new google.maps.InfoWindow();
-
-            document.querySelectorAll(".branch-card").forEach(card => {
-            const naziv = card.dataset.naziv;
-            const adresa = card.dataset.adresa;
-            const lat = parseFloat(card.dataset.lat);
-            const lng = parseFloat(card.dataset.lng);
-
-            if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-            const marker = new google.maps.Marker({
-            position: { lat, lng },
-            map: map,
-            title: naziv
-            });
-
-            marker.addListener("click", () => {
-            map.panTo({ lat, lng });
-            map.setZoom(13);
-
-            infoWindow.setContent(`
-            <div style="padding:6px 8px;">
-            <strong>${naziv}</strong><br/>
-            <span>${adresa}</span>
-            </div>
-            `);
-
-            infoWindow.open(map, marker);
-            });
-            }
-            });
-            });
-        </script>
-    }
-}

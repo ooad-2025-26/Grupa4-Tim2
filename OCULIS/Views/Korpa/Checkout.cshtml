@@ -47,52 +47,58 @@
 
             <form asp-controller="Narudzba" asp-action="Kreiraj" method="post">
                 @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
                 <input type="hidden" asp-for="KorpaId" />
 
                 <div class="mb-3">
-                    <label asp-for="AdresaIsporuke" class="form-label">Adresa</label>
+                    <label asp-for="AdresaIsporuke" class="form-label"></label>
                     <input asp-for="AdresaIsporuke"
                            class="form-control payment-input"
-                           placeholder="Unesite adresu isporuke..." />
+                           placeholder="npr. Zmaja od Bosne 8 ili Ferhadija bb" />
                     <span asp-validation-for="AdresaIsporuke" class="text-danger"></span>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Grad</label>
-                        <input name="Grad"
+                        <label asp-for="Grad" class="form-label"></label>
+                        <input asp-for="Grad"
                                class="form-control payment-input"
                                placeholder="npr. Sarajevo" />
+                        <span asp-validation-for="Grad" class="text-danger"></span>
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Poštanski broj</label>
-                        <input name="PostanskiBroj"
+                        <label asp-for="PostanskiBroj" class="form-label"></label>
+                        <input asp-for="PostanskiBroj"
                                class="form-control payment-input"
                                placeholder="npr. 71000" />
+                        <span asp-validation-for="PostanskiBroj" class="text-danger"></span>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Telefon</label>
-                    <input name="Telefon"
+                    <label asp-for="Telefon" class="form-label"></label>
+                    <input asp-for="Telefon"
                            class="form-control payment-input"
                            placeholder="061 234 567" />
                     <small class="text-muted">Format: 061 234 567</small>
+                    <span asp-validation-for="Telefon" class="text-danger"></span>
                 </div>
 
-                    <button type="submit" class="checkout-confirm-btn">
-                        Potvrdi narudžbu
-                    </button>
-                </form>
+                <button type="submit" class="checkout-confirm-btn">
+                    Potvrdi narudžbu
+                </button>
+            </form>
 
-                <a asp-controller="Korpa" asp-action="Index" class="checkout-back-link">
-                    Nazad na korpu
-                </a>
-            </div>
+            <a asp-controller="Korpa" asp-action="Index" class="checkout-back-link">
+                Nazad na korpu
+            </a>
         </div>
-    </section>
+    </div>
+</section>
 
-    @section Scripts {
-        <partial name="_ValidationScriptsPartial" />
-    }
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

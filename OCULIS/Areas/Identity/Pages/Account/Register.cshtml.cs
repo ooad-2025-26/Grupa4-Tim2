@@ -72,42 +72,35 @@ namespace OCULIS.Areas.Identity.Pages.Account
         /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Required(ErrorMessage = "Polje {0} je obavezno.")]
+            [Required(ErrorMessage = "E-mail je obavezan.")]
             [EmailAddress(ErrorMessage = "Unesite ispravnu e-mail adresu.")]
+            [StringLength(100, ErrorMessage = "E-mail može imati najviše 100 karaktera.")]
             [Display(Name = "E-mail")]
             public string Email { get; set; }
 
-            [Required(ErrorMessage = "Polje {0} je obavezno.")]
+            [Required(ErrorMessage = "Ime je obavezno.")]
+            [StringLength(30, MinimumLength = 2, ErrorMessage = "Ime mora imati između 2 i 30 karaktera.")]
+            [RegularExpression(@"^[A-Za-zČĆŽŠĐčćžšđ]+$", ErrorMessage = "Ime smije sadržavati samo slova.")]
             [Display(Name = "Ime")]
             public string Ime { get; set; }
 
-            [Required(ErrorMessage = "Polje {0} je obavezno.")]
+            [Required(ErrorMessage = "Prezime je obavezno.")]
+            [StringLength(40, MinimumLength = 2, ErrorMessage = "Prezime mora imati između 2 i 40 karaktera.")]
+            [RegularExpression(@"^[A-Za-zČĆŽŠĐčćžšđ]+$", ErrorMessage = "Prezime smije sadržavati samo slova.")]
             [Display(Name = "Prezime")]
             public string Prezime { get; set; }
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
+
             [Required(ErrorMessage = "Polje {0} je obavezno.")]
             [StringLength(100, ErrorMessage = "Polje {0} mora imati najmanje {2}, a najviše {1} znakova.", MinimumLength = 6)]
             [DataType(DataType.Password)]
             [Display(Name = "Lozinka")]
             public string Password { get; set; }
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [DataType(DataType.Password)]
             [Display(Name = "Potvrdi lozinku")]
             [Compare("Password", ErrorMessage = "Lozinka i potvrda lozinke se ne podudaraju.")]
             public string ConfirmPassword { get; set; }
         }
-
 
         public async Task OnGetAsync(string returnUrl = null)
         {
